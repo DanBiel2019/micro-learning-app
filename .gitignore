@@ -12,3 +12,6 @@
 *.aab
 *.keystore
 !debug.keystore
+
+# Published builds
+!release/*.apk

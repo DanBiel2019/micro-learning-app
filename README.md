@@ -4,6 +4,12 @@ A personal micro-learning feed for Android: each morning it curates five ideas f
 business, technology/AI, leadership, creativity, and systems & measurement, and reads
 them aloud podcast-style in ~1–2 minute chunks you can swipe, pause, or dig into.
 
+## Download
+
+Grab the latest APK from [`release/`](release/), or download it directly:
+[micro-learning-v1.1-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v1.1-debug.apk).
+Install steps are in [release/README.md](release/README.md).
+
 ## What's in it
 
 ```
