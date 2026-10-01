@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/groot/**)",
+      "Bash(gh repo *)"
+    ]
+  }
+}
