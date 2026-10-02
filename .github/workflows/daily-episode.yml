@@ -4,13 +4,13 @@ name: Daily episode
 # The app reads releases/latest/download/feed.json.
 #
 # Everything runs on the GitHub runner with open-weights models, so no API keys are needed:
-#   - Qwen3-8B (Apache-2.0) via llama.cpp writes the scripts, grounded in Wikipedia and news articles
+#   - Qwen3-14B (Apache-2.0) via llama.cpp writes the scripts, grounded in Wikipedia and news articles
 #   - Kokoro (Apache-2.0) voices the two hosts
 # Optional: set engine=claude on a manual run (needs an ANTHROPIC_API_KEY secret).
 
 on:
   schedule:
-    - cron: "0 8 * * *"   # 08:00 UTC = 4:00 AM US Eastern (daylight time); ready by breakfast
+    - cron: "0 8 * * *"   # 08:00 UTC = 4:00 AM US Eastern (daylight time); about two hours of CPU time, ready by breakfast
   workflow_dispatch:
     inputs:
       date:
@@ -35,13 +35,13 @@ concurrency:
 
 env:
   LLAMA_CPP_BUILD: b11335
-  LLM_FILE: Qwen3-8B-Q4_K_M.gguf
-  LLM_URL: https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf
+  LLM_FILE: Qwen3-14B-Q4_K_M.gguf
+  LLM_URL: https://huggingface.co/Qwen/Qwen3-14B-GGUF/resolve/main/Qwen3-14B-Q4_K_M.gguf
 
 jobs:
   episode:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
 

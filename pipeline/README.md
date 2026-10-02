@@ -9,7 +9,7 @@ open-weights models:
 
 | Job | Model | License |
 |-----|-------|---------|
-| Writing scripts, visuals, takeaways | [Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B-GGUF) (Q4_K_M) via [llama.cpp](https://github.com/ggml-org/llama.cpp) | Apache-2.0 / MIT |
+| Writing scripts, visuals, takeaways | [Qwen3-14B](https://huggingface.co/Qwen/Qwen3-14B-GGUF) (Q4_K_M) via [llama.cpp](https://github.com/ggml-org/llama.cpp) | Apache-2.0 / MIT |
 | Two-host voices | [Kokoro 82M](https://github.com/thewh1teagle/kokoro-onnx) | Apache-2.0 |
 
 ```
@@ -43,15 +43,15 @@ Nothing to set up: the job runs daily at 08:00 UTC. To run it by hand, open
 **Actions → Daily episode → Run workflow**. Untick *publish* for a dry run; the episode
 script and audio are kept as a downloadable artifact either way.
 
-The first run downloads ~5.5 GB of models (then cached) and takes roughly an hour on the
+The first run downloads ~9.5 GB of models (then cached); a run takes about two hours on the
 free runner; later runs skip the download.
 
 ### Locally
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-# models: Qwen3-8B-Q4_K_M.gguf (or any GGUF) and Kokoro files; llama-server on PATH
-LLM_MODEL=~/models/Qwen3-8B-Q4_K_M.gguf KOKORO_DIR=~/kokoro \
+# models: Qwen3-14B-Q4_K_M.gguf (or any GGUF) and Kokoro files; llama-server on PATH
+LLM_MODEL=~/models/Qwen3-14B-Q4_K_M.gguf KOKORO_DIR=~/kokoro \
   .venv/bin/python daily.py --repo OWNER/REPO
 .venv/bin/python daily.py --repo OWNER/REPO --script episodes/2026-10-01.json   # voice a hand-written script
 GITHUB_TOKEN=... .venv/bin/python publish.py --repo OWNER/REPO

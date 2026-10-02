@@ -1,6 +1,6 @@
 """Runs an open-weights model locally with llama.cpp's llama-server and asks it for JSON.
 
-Default model: Qwen3-8B (Apache-2.0), quantised to Q4_K_M, which fits comfortably in a
+Default model: Qwen3-14B (Apache-2.0), quantised to Q4_K_M, which fits comfortably in a
 GitHub Actions runner's 16 GB and needs no GPU or API key. Output is constrained to a JSON
 schema by llama.cpp's grammar sampler, so every response parses.
 """
@@ -14,7 +14,7 @@ import time
 import urllib.request
 from pathlib import Path
 
-DEFAULT_MODEL = Path(os.environ.get("LLM_MODEL", Path.home() / "models" / "Qwen3-8B-Q4_K_M.gguf"))
+DEFAULT_MODEL = Path(os.environ.get("LLM_MODEL", Path.home() / "models" / "Qwen3-14B-Q4_K_M.gguf"))
 DEFAULT_SERVER = os.environ.get("LLAMA_SERVER", "llama-server")
 
 
@@ -90,6 +90,10 @@ class LocalLLM:
             "top_p": 0.8,
             "top_k": 20,
             "presence_penalty": 1.0,
+            # DRY discourages verbatim repetition; JSON punctuation breaks sequences so structure is unaffected.
+            "dry_multiplier": 0.8,
+            "dry_base": 1.75,
+            "dry_allowed_length": 4,
         }
         req = urllib.request.Request(
             f"http://127.0.0.1:{self.port}/v1/chat/completions",

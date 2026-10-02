@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import random
+import re
 from datetime import date
 from pathlib import Path
 from typing import Literal, Optional
@@ -61,7 +62,7 @@ class DraftSegment(_Strict):
     takeaway: str
     challenge: str
     visual: DraftVisual
-    script: list[DraftLine] = Field(min_length=12, max_length=24)
+    script: list[DraftLine] = Field(min_length=16, max_length=24)
     deeperQuestions: list[str] = Field(min_length=3, max_length=3)
 
 
@@ -69,8 +70,17 @@ class Framing(_Strict):
     title: str = Field(description="Episode title, 2-6 words, intriguing")
     theme: str = Field(description="One line naming the thread that connects the segments")
     welcome: list[DraftLine] = Field(min_length=2, max_length=2)
-    handoffs: list[str]
     signoff: list[DraftLine] = Field(min_length=2, max_length=3)
+
+
+class Fix(_Strict):
+    line: int
+    problem: str
+    replacement: str = Field(description="Corrected line, or empty to delete it")
+
+
+class FactCheck(_Strict):
+    fixes: list[Fix] = Field(max_length=8)
 
 
 class Pick(_Strict):
@@ -94,13 +104,13 @@ Shape:
 - Then the transferable lesson, and a concrete bridge to the listener's work.
 - Intermediate-to-advanced depth. No hype, no generic self-help.
 
-Script: 14-20 lines, 280-340 spoken words in total. Natural conversation with genuine back-and-forth. Short spoken sentences, contractions. No greetings, no sign-off, no mention of "this episode" or other segments. No markdown, emoji, stage directions or sound effects. Spell out symbols and say numbers the way people say them.
+Script: 16-22 lines, 300-360 spoken words in total. Natural conversation with genuine back-and-forth. Short spoken sentences, contractions. Use at least four concrete facts from the SOURCE (names, places, years, numbers, what was said or decided). Every line must add something new: never repeat or paraphrase an earlier line, and never read the takeaway or challenge out word for word. No greetings, no sign-off, no wrap-up lines like "and that's the story", no mention of "this episode" or other segments. No markdown, emoji, stage directions or sound effects. Spell out symbols and say numbers the way people say them.
 
 Visual: one infographic that makes the core idea click. Pick the kind that fits:
 flow (3-5 sequential steps), cycle (3-5 steps in a loop), compare (2-3 side-by-side options), stats (2-4 big numbers; put the number in valueLabel), bars (3-5 comparable quantities; set value and valueLabel), venn (2-3 overlapping ideas, the LAST item is the overlap), ladder (3-5 levels, weakest first), timeline (3-6 dated events; year in valueLabel), quote (one item: quote in label, speaker in detail).
 Labels at most 4 words, details at most 12 words, one fitting emoji per item, emphasis=true on the single punchline item. value and valueLabel are null when unused. Only numbers that appear in the SOURCE.
 
-Other fields: kicker is a 2-4 word hook; summary is 2-3 tight sentences; keyPoints are 3 short bullets; takeaway is one memorable sentence; challenge is one small action the listener can do today; deeperQuestions are 3 questions worth exploring further."""
+Other fields: title is a specific, intriguing headline about this story (never just the topic name); kicker is a 2-4 word hook; summary is 2-3 tight sentences; keyPoints are 3 short bullets; takeaway is one memorable sentence; challenge is one small action the listener can do today; deeperQuestions are 3 questions worth exploring further."""
 
 SEGMENT_USER = """TOPIC: {topic}
 ANGLE TO EXPLORE: {angle}
@@ -120,8 +130,15 @@ Return:
 - title: a short intriguing episode title (2-6 words)
 - theme: one line naming the thread that genuinely connects the segments
 - welcome: two lines; {host} says good morning and introduces herself, {cohost} introduces himself and states the theme
-- handoffs: exactly {handoffs} one-sentence lines, one between each pair of consecutive segments, teasing the next segment without spoiling it
 - signoff: two or three lines recapping the day's ideas in a few words each, then a warm goodbye"""
+
+CHECK_SYSTEM = """You are a meticulous fact-checker for a podcast. Compare each numbered script line with the SOURCE text. Flag a line only if it states a fact (a name, date, number, place, event, attribution or quote) that the SOURCE does not support, or that contradicts it. Opinions, analogies and the hosts' links to the listener's work are fine. Also flag lines that repeat an earlier line. For each flagged line give a corrected version that only uses facts from the SOURCE, or an empty replacement to delete it. If everything checks out, return no fixes."""
+
+CHECK_USER = """SOURCE: "{title}"
+{text}
+
+SCRIPT:
+{script}"""
 
 PICK_SYSTEM = "You are the producer of a morning podcast for a senior network engineer who owns observability and resilience. Choose material that teaches a transferable lesson."
 
@@ -182,7 +199,10 @@ def pick_fresh(llm: LocalLLM, sources: dict, covered: set[str]) -> research.Docu
     items = [i for i in research.recent_items(sources["freshFeeds"]) if i.url not in covered]
     if not items:
         return None
-    items = items[:45]
+    lessons = re.compile(r"outage|incident|post-?mortem|root cause|failure|failed|bug|vulnerab|breach|lesson|"
+                         r"research|study|paper|benchmark|latency|reliab|resilien|disrupt|went down|broke|leak", re.I)
+    preferred = [i for i in items if lessons.search(f"{i.title} {i.summary}")]
+    items = (preferred + [i for i in items if i not in preferred])[:45]
     listing = "\n".join(f"{n}. [{i.feed}] {i.title}: {i.summary[:140]}" for n, i in enumerate(items))
     pick = llm.json(PICK_SYSTEM, PICK_FRESH_USER.format(listing=listing), Pick.model_json_schema(),
                     max_tokens=60, temperature=0.2)
@@ -219,7 +239,47 @@ def write_segment(llm: LocalLLM, profile: dict, topic: str, angle: str, doc: res
         if words >= MIN_WORDS:
             break
         user += "\n\nThat script was too short. Write a fuller conversation of 280-340 words."
-    return best[1]
+    return fact_check(llm, best[1], doc)
+
+
+def fact_check(llm: LocalLLM, draft: DraftSegment, doc: research.Document) -> DraftSegment:
+    numbered = "\n".join(f"{i}. {l.text}" for i, l in enumerate(draft.script))
+    try:
+        result = FactCheck.model_validate(llm.json(
+            CHECK_SYSTEM, CHECK_USER.format(title=doc.title, text=doc.text, script=numbered),
+            FactCheck.model_json_schema(), max_tokens=1500, temperature=0.1))
+    except Exception as e:
+        print(f"    fact-check skipped: {e}")
+        return draft
+    lines = list(draft.script)
+    for fix in result.fixes:
+        if 0 <= fix.line < len(lines):
+            print(f"    fact-check line {fix.line}: {fix.problem[:90]}")
+            text = fix.replacement.strip()
+            lines[fix.line] = None if not text else DraftLine(speaker=lines[fix.line].speaker, text=text)
+    return draft.model_copy(update={"script": dedupe([l for l in lines if l is not None])})
+
+
+def dedupe(lines: list[DraftLine]) -> list[DraftLine]:
+    """Drops lines that repeat (or nearly repeat) an earlier one."""
+    import difflib
+
+    kept: list[DraftLine] = []
+    for line in lines:
+        norm = re.sub(r"\W+", " ", line.text.lower()).strip()
+        if any(difflib.SequenceMatcher(None, norm, re.sub(r"\W+", " ", k.text.lower()).strip()).ratio() > 0.85 for k in kept):
+            continue
+        kept.append(line)
+    return kept
+
+
+HANDOFFS = [
+    "Up next: {title}.",
+    "Okay, switching gears. Next up, {title}.",
+    "Let's keep going. Next: {title}.",
+    "Now for something a little different: {title}.",
+    "Stay with us. Coming up: {title}.",
+]
 
 
 def generate_episode(profile: dict, covered: list[str], today: date) -> tuple[Episode, list[str]]:
@@ -289,8 +349,7 @@ def generate_episode(profile: dict, covered: list[str], today: date) -> tuple[Ep
         listing = "\n".join(f"{i + 1}. {s.title}: {s.takeaway}" for i, s in enumerate(segments))
         framing = Framing.model_validate(llm.json(
             FRAMING_SYSTEM.format(host=v["hostName"], cohost=v["cohostName"]),
-            FRAMING_USER.format(n=len(segments), listing=listing, host=v["hostName"], cohost=v["cohostName"],
-                                handoffs=len(segments) - 1),
+            FRAMING_USER.format(n=len(segments), listing=listing, host=v["hostName"], cohost=v["cohostName"]),
             Framing.model_json_schema(), max_tokens=1200,
         ))
 
@@ -301,8 +360,11 @@ def generate_episode(profile: dict, covered: list[str], today: date) -> tuple[Ep
 
 
 def _to_segment(d: DraftSegment, topic: str, adjacent: bool, source: Source, reading: list[Reading]) -> Segment:
+    title = d.title
+    if title.lower().startswith(("fresh", topic.lower())) or title.strip().lower() == topic.lower():
+        title = source.title if source.format == "news" else d.kicker.title()
     return Segment(
-        id="s0", topic=topic, adjacent=adjacent, style=d.style, kicker=d.kicker, title=d.title,
+        id="s0", topic=topic, adjacent=adjacent, style=d.style, kicker=d.kicker, title=title,
         summary=d.summary, keyPoints=d.keyPoints, takeaway=d.takeaway, challenge=d.challenge, source=source,
         visual=Visual.model_validate(d.visual.model_dump()),
         script=[Line(speaker=l.speaker, text=l.text) for l in d.script],
@@ -313,9 +375,9 @@ def _to_segment(d: DraftSegment, topic: str, adjacent: bool, source: Source, rea
 def _apply_framing(segments: list[Segment], f: Framing) -> None:
     segments[0].script[:0] = [Line(speaker=l.speaker, text=l.text) for l in f.welcome]
     for i, seg in enumerate(segments[:-1]):
-        if i < len(f.handoffs):
-            # Whoever didn't speak last delivers the hand-off, so it sounds like a conversation.
-            last = seg.script[-1].speaker
-            seg.script.append(Line(speaker="cohost" if last == "host" else "host", text=f.handoffs[i]))
+        # Whoever didn't speak last delivers the hand-off, so it sounds like a conversation.
+        last = seg.script[-1].speaker
+        text = HANDOFFS[i % len(HANDOFFS)].format(title=segments[i + 1].title.rstrip(".?!"))
+        seg.script.append(Line(speaker="cohost" if last == "host" else "host", text=text))
     segments[-1].script.extend(Line(speaker=l.speaker, text=l.text) for l in f.signoff)
 
