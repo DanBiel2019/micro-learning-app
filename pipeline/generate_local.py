@@ -62,7 +62,7 @@ class DraftSegment(_Strict):
     takeaway: str
     challenge: str
     visual: DraftVisual
-    script: list[DraftLine] = Field(min_length=16, max_length=24)
+    script: list[DraftLine] = Field(min_length=16, max_length=20)
     deeperQuestions: list[str] = Field(min_length=3, max_length=3)
 
 
@@ -75,8 +75,9 @@ class Framing(_Strict):
 
 class Fix(_Strict):
     line: int
+    verdict: Literal["unsupported", "contradicted", "repeated"]
     problem: str
-    replacement: str = Field(description="Corrected line, or empty to delete it")
+    replacement: str = Field(description="Corrected line using only SOURCE facts; empty only for repeated lines")
 
 
 class FactCheck(_Strict):
@@ -102,6 +103,7 @@ Shape:
 - Open on the concrete story: who, when, what happened, what surprised people or went wrong.
 - Then how people figured it out and what was learned.
 - Then the transferable lesson, and a concrete bridge to the listener's work.
+- Finish within two lines of that bridge. Don't keep restating the lesson.
 - Intermediate-to-advanced depth. No hype, no generic self-help.
 
 Script: 16-22 lines, 300-360 spoken words in total. Natural conversation with genuine back-and-forth. Short spoken sentences, contractions. Use at least four concrete facts from the SOURCE (names, places, years, numbers, what was said or decided). Every line must add something new: never repeat or paraphrase an earlier line, and never read the takeaway or challenge out word for word. No greetings, no sign-off, no wrap-up lines like "and that's the story", no mention of "this episode" or other segments. No markdown, emoji, stage directions or sound effects. Spell out symbols and say numbers the way people say them.
@@ -132,7 +134,16 @@ Return:
 - welcome: two lines; {host} says good morning and introduces herself, {cohost} introduces himself and states the theme
 - signoff: two or three lines recapping the day's ideas in a few words each, then a warm goodbye"""
 
-CHECK_SYSTEM = """You are a meticulous fact-checker for a podcast. Compare each numbered script line with the SOURCE text. Flag a line only if it states a fact (a name, date, number, place, event, attribution or quote) that the SOURCE does not support, or that contradicts it. Opinions, analogies and the hosts' links to the listener's work are fine. Also flag lines that repeat an earlier line. For each flagged line give a corrected version that only uses facts from the SOURCE, or an empty replacement to delete it. If everything checks out, return no fixes."""
+CHECK_SYSTEM = """You are a meticulous fact-checker for a podcast. Compare each numbered script line with the SOURCE text.
+
+Only list a line if one of these is true:
+- "contradicted": it states a name, date, number, place or event that the SOURCE contradicts
+- "unsupported": it states a specific name, date, number, place or event that does not appear in the SOURCE
+- "repeated": it says essentially the same thing as an earlier line
+
+Never list questions, reactions, opinions, analogies, general lessons, or lines linking the idea to the listener's work. Do not list lines that are correct. Most scripts need zero to three fixes.
+
+For contradicted or unsupported lines, the replacement keeps the line's role in the conversation (same speaker, similar length) but uses only facts from the SOURCE. For repeated lines, the replacement is empty."""
 
 CHECK_USER = """SOURCE: "{title}"
 {text}
@@ -252,11 +263,19 @@ def fact_check(llm: LocalLLM, draft: DraftSegment, doc: research.Document) -> Dr
         print(f"    fact-check skipped: {e}")
         return draft
     lines = list(draft.script)
-    for fix in result.fixes:
-        if 0 <= fix.line < len(lines):
-            print(f"    fact-check line {fix.line}: {fix.problem[:90]}")
-            text = fix.replacement.strip()
-            lines[fix.line] = None if not text else DraftLine(speaker=lines[fix.line].speaker, text=text)
+    fixes = [f for f in result.fixes if 0 <= f.line < len(lines)]
+    if len(fixes) > len(lines) // 3:
+        # A checker that objects to most of the script is confused, not helpful.
+        print(f"    fact-check ignored: flagged {len(fixes)} of {len(lines)} lines")
+        return draft.model_copy(update={"script": dedupe(lines)})
+    for fix in fixes:
+        text = fix.replacement.strip()
+        if fix.verdict == "repeated":
+            print(f"    fact-check line {fix.line}: removed repeat")
+            lines[fix.line] = None
+        elif text and text != lines[fix.line].text:
+            print(f"    fact-check line {fix.line} ({fix.verdict}): {fix.problem[:90]}")
+            lines[fix.line] = DraftLine(speaker=lines[fix.line].speaker, text=text)
     return draft.model_copy(update={"script": dedupe([l for l in lines if l is not None])})
 
 
@@ -267,7 +286,7 @@ def dedupe(lines: list[DraftLine]) -> list[DraftLine]:
     kept: list[DraftLine] = []
     for line in lines:
         norm = re.sub(r"\W+", " ", line.text.lower()).strip()
-        if any(difflib.SequenceMatcher(None, norm, re.sub(r"\W+", " ", k.text.lower()).strip()).ratio() > 0.85 for k in kept):
+        if len(norm.split()) >= 6 and any(difflib.SequenceMatcher(None, norm, re.sub(r"\W+", " ", k.text.lower()).strip()).ratio() > 0.85 for k in kept):
             continue
         kept.append(line)
     return kept
