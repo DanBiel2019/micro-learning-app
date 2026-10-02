@@ -9,7 +9,7 @@ Prebuilt APKs you can sideload onto an Android phone.
 
 **Direct download (latest):** [micro-learning-v2.0-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v2.0-debug.apk)
 
-SHA-256 (2.0): `5e3add50c3ebabe60dd97cda572f5af8049531803e9e2dd832d9e6d2ce8df5a1`
+SHA-256 (2.0): `154940510d067b59c3e0ce5bbb3c28859bda0c39650d646b7bef68c30610ed22`
 
 ## Installing
 

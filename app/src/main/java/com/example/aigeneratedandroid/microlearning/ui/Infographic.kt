@@ -210,7 +210,7 @@ private fun CycleGraphic(items: List<VisualItem>, palette: TopicPalette, progres
             }
         }
         val density = androidx.compose.ui.platform.LocalDensity.current
-        val nodeWidth = 104.dp
+        val nodeWidth = 112.dp
         items.forEachIndexed { i, item ->
             val angle = Math.toRadians(-90.0 + i * 360.0 / n)
             val px = center.x + radius * cos(angle).toFloat()
@@ -229,7 +229,7 @@ private fun CycleGraphic(items: List<VisualItem>, palette: TopicPalette, progres
                         style = MaterialTheme.typography.labelLarge,
                         textAlign = TextAlign.Center,
                         color = if (item.emphasis) palette.accent else MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
+                        maxLines = 3,
                         modifier = Modifier
                             .padding(top = 4.dp)
                             .clip(RoundedCornerShape(8.dp))
