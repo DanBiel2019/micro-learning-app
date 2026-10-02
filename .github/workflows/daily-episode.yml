@@ -3,16 +3,28 @@ name: Daily episode
 # Writes, voices and publishes one micro-learning episode per day as a GitHub Release.
 # The app reads releases/latest/download/feed.json.
 #
-# Needs one repository secret: ANTHROPIC_API_KEY (Settings > Secrets and variables > Actions).
+# Everything runs on the GitHub runner with open-weights models, so no API keys are needed:
+#   - Qwen3-8B (Apache-2.0) via llama.cpp writes the scripts, grounded in Wikipedia and news articles
+#   - Kokoro (Apache-2.0) voices the two hosts
+# Optional: set engine=claude on a manual run (needs an ANTHROPIC_API_KEY secret).
 
 on:
   schedule:
-    - cron: "30 9 * * *"   # 09:30 UTC = 5:30 AM US Eastern (daylight time)
+    - cron: "0 8 * * *"   # 08:00 UTC = 4:00 AM US Eastern (daylight time); ready by breakfast
   workflow_dispatch:
     inputs:
       date:
         description: "Episode date (YYYY-MM-DD). Defaults to today (UTC)."
         required: false
+      engine:
+        description: "Script writer"
+        type: choice
+        options: [local, claude]
+        default: local
+      publish:
+        description: "Publish to the app (untick for a dry run; outputs are kept as an artifact)"
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -21,10 +33,15 @@ concurrency:
   group: daily-episode
   cancel-in-progress: false
 
+env:
+  LLAMA_CPP_BUILD: b11335
+  LLM_FILE: Qwen3-8B-Q4_K_M.gguf
+  LLM_URL: https://huggingface.co/Qwen/Qwen3-8B-GGUF/resolve/main/Qwen3-8B-Q4_K_M.gguf
+
 jobs:
   episode:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -39,44 +56,60 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
           pip install -r pipeline/requirements.txt
 
-      - name: Cache Kokoro voice model
-        id: kokoro
+      - name: Cache models
+        id: models
         uses: actions/cache@v4
         with:
-          path: ~/kokoro
-          key: kokoro-v1.0
+          path: |
+            ~/kokoro
+            ~/models
+            ~/llama
+          key: models-kokoro-v1.0-${{ env.LLM_FILE }}-${{ env.LLAMA_CPP_BUILD }}
 
-      - name: Download Kokoro voice model
-        if: steps.kokoro.outputs.cache-hit != 'true'
+      - name: Download models and llama.cpp
+        if: steps.models.outputs.cache-hit != 'true'
         run: |
-          mkdir -p ~/kokoro && cd ~/kokoro
-          curl -sSL -O https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
-          curl -sSL -O https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+          mkdir -p ~/kokoro ~/models ~/llama
+          curl -sSL -o ~/kokoro/kokoro-v1.0.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+          curl -sSL -o ~/kokoro/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+          curl -sSL -o ~/models/$LLM_FILE "$LLM_URL"
+          curl -sSL https://github.com/ggml-org/llama.cpp/releases/download/$LLAMA_CPP_BUILD/llama-$LLAMA_CPP_BUILD-bin-ubuntu-x64.tar.gz \
+            | tar xz -C ~/llama --strip-components=1
+          ls -la ~/models ~/llama/llama-server
 
       - name: Write and voice today's episode
         working-directory: pipeline
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          KOKORO_DIR: ~/kokoro
+          ENGINE: ${{ inputs.engine || 'local' }}
+          EPISODE_DATE: ${{ inputs.date }}
         run: |
           export KOKORO_DIR="$HOME/kokoro"
-          python daily.py --repo "${{ github.repository }}" ${{ inputs.date && format('--date {0}', inputs.date) || '' }}
+          export LLM_MODEL="$HOME/models/$LLM_FILE"
+          export LLAMA_SERVER="$HOME/llama/llama-server"
+          export LD_LIBRARY_PATH="$HOME/llama:${LD_LIBRARY_PATH:-}"
+          export LLM_LOG="$RUNNER_TEMP/llama-server.log"
+          python -u daily.py --repo "${{ github.repository }}" --engine "$ENGINE" ${EPISODE_DATE:+--date "$EPISODE_DATE"}
 
       - name: Publish release
         working-directory: pipeline
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -f out/feed.json ]; then
+          if [ "${{ inputs.publish == false }}" = "true" ]; then
+            echo "Dry run: not publishing."
+          elif [ -f out/feed.json ]; then
             python publish.py --repo "${{ github.repository }}"
           else
             echo "No new episode to publish."
           fi
 
-      - name: Keep the script as a build artifact
+      - name: Keep the episode and model log
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: episode-${{ github.run_id }}
-          path: pipeline/out/episode.json
+          path: |
+            pipeline/out/
+            ${{ runner.temp }}/llama-server.log
           if-no-files-found: ignore

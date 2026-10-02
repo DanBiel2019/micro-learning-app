@@ -1,4 +1,4 @@
-anthropic>=1.11
+anthropic>=1.11  # only for --engine claude
 pydantic>=2.13
 kokoro-onnx>=0.6
 soundfile>=0.13

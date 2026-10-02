@@ -32,7 +32,7 @@ Episodes themselves are published as [GitHub Releases](https://github.com/DanBie
 ```
 
 See [`pipeline/README.md`](pipeline/README.md) for the content pipeline and its one-time
-setup (an `ANTHROPIC_API_KEY` repository secret).
+setup (none: it runs on free, open-weights models).
 
 ### App
 

@@ -4,47 +4,67 @@ Every morning a GitHub Actions job ([`daily-episode.yml`](../.github/workflows/d
 writes, voices and publishes a new ~10 minute, two-host episode. The app downloads it from
 `releases/latest/download/feed.json`.
 
+**No API keys and no running cost.** Everything runs on the free GitHub runner with
+open-weights models:
+
+| Job | Model | License |
+|-----|-------|---------|
+| Writing scripts, visuals, takeaways | [Qwen3-8B](https://huggingface.co/Qwen/Qwen3-8B-GGUF) (Q4_K_M) via [llama.cpp](https://github.com/ggml-org/llama.cpp) | Apache-2.0 / MIT |
+| Two-host voices | [Kokoro 82M](https://github.com/thewh1teagle/kokoro-onnx) | Apache-2.0 |
+
 ```
-profile.json ──▶ generate.py ──▶ episode.json ──▶ render_audio.py ──▶ seg-N.mp3 ─┐
- (who, topics,    Claude +         (script,         Kokoro TTS,         feed.json ├─▶ publish.py ──▶ GitHub Release
-  adjacent        web search       visuals,         two voices,         ledger.json┘     ep-YYYY-MM-DD (latest)
-  fields, mix)                     sources)         line timings)
+sources.json ─▶ pick ideas ─▶ research.py ─────────▶ generate_local.py ─▶ render_audio.py ─▶ publish.py
+ (curated bank,  2 core,       Wikipedia article or   Qwen3 writes each    Kokoro voices,     GitHub Release
+  categories,    2 adjacent,   news article text      segment ONLY from    line timings       ep-YYYY-MM-DD
+  news feeds)    1 fresh                              that source text
 ```
 
-- **generate.py** asks Claude for five segments: 2 from your core topics, 2 from adjacent
-  fields (aviation safety, medicine, military history, behavioral economics, …) and 1 "fresh"
-  item from the last 60 days found with web search. Each segment includes the two-host
-  script, an infographic spec, sources, deeper questions and further reading. Output is
-  validated against [`schema.py`](schema.py).
-- **ledger.json** travels with every release and lists everything covered so far, so the
-  generator never repeats an idea or source.
-- **render_audio.py** voices the script with [Kokoro](https://github.com/thewh1teagle/kokoro-onnx),
-  an open-weights neural TTS model that runs on CPU (no per-use cost), normalises loudness to
-  podcast level, and records when each line starts so the app can highlight the transcript.
-- **publish.py** creates the release and uploads the MP3s, `feed.json` and `ledger.json`.
+## How it stays accurate with a small model
 
-## One-time setup
+A model this size invents details when writing from memory, so it never does: every
+segment is written from a source document the pipeline fetches first, with instructions to
+use only facts in that text. The source is cited in the app and linked under "Go deeper".
 
-Add a repository secret **`ANTHROPIC_API_KEY`** (Settings → Secrets and variables → Actions).
-The job runs at 09:30 UTC; change the `cron` line to move it. Run it by hand from the
-Actions tab ("Daily episode" → Run workflow).
+- **Evergreen ideas** come from Wikipedia. `sources.json` holds a curated bank of ~100
+  ideas (survivorship bias, Braess's paradox, the Tenerife disaster, the Citicorp Center
+  crisis, Conway's law, …), each with an angle and, where there is one, the classic book to
+  credit. When the bank runs low, the model picks new articles from curated Wikipedia
+  categories (engineering failures, cognitive biases, systems thinking, …), so coverage
+  keeps widening on its own.
+- **The fresh segment** comes from the last three weeks of engineering news feeds
+  (Cloudflare's blog, The Register, Ars Technica, InfoQ, …). The model ranks candidates,
+  favouring postmortems, outages and research findings over product launches.
+- **ledger.json** travels with every release and records every source used, so nothing
+  repeats.
 
-Cost: one Claude Opus 5.5 request with a few web searches per day, typically well under a
-dollar. The voices are free.
+## Running it
 
-## Running locally
+Nothing to set up: the job runs daily at 08:00 UTC. To run it by hand, open
+**Actions → Daily episode → Run workflow**. Untick *publish* for a dry run; the episode
+script and audio are kept as a downloadable artifact either way.
+
+The first run downloads ~5.5 GB of models (then cached) and takes roughly an hour on the
+free runner; later runs skip the download.
+
+### Locally
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -r requirements.txt
-# Kokoro model files (~350 MB) into ~/tools/kokoro, or set KOKORO_DIR
-.venv/bin/python daily.py --repo OWNER/REPO                         # generate with Claude
-.venv/bin/python daily.py --repo OWNER/REPO --script episodes/2026-10-01.json  # voice a hand-written script
+# models: Qwen3-8B-Q4_K_M.gguf (or any GGUF) and Kokoro files; llama-server on PATH
+LLM_MODEL=~/models/Qwen3-8B-Q4_K_M.gguf KOKORO_DIR=~/kokoro \
+  .venv/bin/python daily.py --repo OWNER/REPO
+.venv/bin/python daily.py --repo OWNER/REPO --script episodes/2026-10-01.json   # voice a hand-written script
 GITHUB_TOKEN=... .venv/bin/python publish.py --repo OWNER/REPO
 ```
 
+Optional: `--engine claude` writes with the Anthropic API instead (needs `ANTHROPIC_API_KEY`).
+
 ## Tuning
 
-- **Topics and mix**: `profile.json` (`coreTopics`, `adjacentFields`, `mix`).
+- **Topics and mix**: `profile.json` (`listener`, `mix`), `sources.json` (`seeds`,
+  `discovery.categories`, `freshFeeds`). Add a seed with a Wikipedia title, a topic and an
+  angle.
 - **Voices**: `profile.json` → `voices`. Kokoro voices include `af_heart`, `af_bella`,
   `bf_emma` (female) and `am_michael`, `am_fenrir`, `bm_george` (male).
-- **Length**: the script asks for ~300 spoken words per segment (about two minutes).
+- **A different model**: set `LLM_FILE` / `LLM_URL` in the workflow to any GGUF that
+  llama.cpp supports.
