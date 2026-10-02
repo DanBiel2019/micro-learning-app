@@ -32,7 +32,15 @@ def inline_refs(schema: dict) -> dict:
         if isinstance(node, dict):
             if "$ref" in node:
                 return walk(defs[node["$ref"].split("/")[-1]])
-            return {k: walk(v) for k, v in node.items() if k not in ("$defs", "title")}
+            out = {}
+            for k, v in node.items():
+                if k == "$defs" or (k == "title" and isinstance(v, str)):
+                    continue  # pydantic's display titles, not fields
+                if k == "properties":
+                    out[k] = {name: walk(prop) for name, prop in v.items()}  # field names are kept as-is
+                else:
+                    out[k] = walk(v)
+            return out
         if isinstance(node, list):
             return [walk(v) for v in node]
         return node

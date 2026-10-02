@@ -25,7 +25,7 @@ Episodes themselves are published as [GitHub Releases](https://github.com/DanBie
  GitHub Actions, daily                          Android app
  ┌──────────────────────────────┐               ┌───────────────────────────────────────┐
  │ pipeline/                    │   Release     │ EpisodeRepository  fetch + cache feed │
- │  generate.py  Claude writes  │──feed.json──▶ │ PrefetchWorker     download overnight │
+ │  generate_local  Qwen3 writes│──feed.json──▶ │ PrefetchWorker     download overnight │
  │  render_audio  Kokoro voices │  seg-N.mp3    │ PlaybackService    Media3, lock screen│
  │  publish.py   GitHub Release │               │ Compose UI         infographics, etc. │
  └──────────────────────────────┘               └───────────────────────────────────────┘

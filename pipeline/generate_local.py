@@ -205,7 +205,13 @@ def write_segment(llm: LocalLLM, profile: dict, topic: str, angle: str, doc: res
                                published=f", {doc.published}" if doc.published else "", text=doc.text)
     best = None
     for attempt in range(2):
-        draft = DraftSegment.model_validate(llm.json(system, user, DraftSegment.model_json_schema(), max_tokens=3500))
+        try:
+            draft = DraftSegment.model_validate(llm.json(system, user, DraftSegment.model_json_schema(), max_tokens=3500))
+        except Exception as e:
+            print(f"    attempt {attempt + 1} failed: {e}")
+            if attempt == 1 and best is None:
+                raise
+            continue
         words = sum(len(l.text.split()) for l in draft.script)
         print(f"    script: {len(draft.script)} lines, {words} words, visual={draft.visual.kind}")
         if best is None or words > best[0]:
@@ -242,7 +248,11 @@ def generate_episode(profile: dict, covered: list[str], today: date) -> tuple[Ep
             except Exception as e:
                 print(f"  skipped {idea['wiki']}: {e}")
                 continue
-            draft = write_segment(llm, profile, idea["topic"], idea["angle"], doc)
+            try:
+                draft = write_segment(llm, profile, idea["topic"], idea["angle"], doc)
+            except Exception as e:  # one bad generation shouldn't sink the episode
+                print(f"  couldn't write {idea['wiki']}: {e}")
+                continue
             book = idea.get("book")
             source = (Source(title=book["title"], author=book["author"], year=book.get("year"), url=None, format="book")
                       if book else Source(title=doc.title, author="Wikipedia", year=None, url=doc.url, format="article"))
@@ -254,10 +264,19 @@ def generate_episode(profile: dict, covered: list[str], today: date) -> tuple[Ep
 
         if mix.get("fresh"):
             print("  finding a fresh story")
-            doc = pick_fresh(llm, sources, done)
+            try:
+                doc = pick_fresh(llm, sources, done)
+            except Exception as e:
+                print(f"  no fresh story today: {e}")
+                doc = None
+            draft = None
             if doc:
                 print(f"  fresh: {doc.title} ({doc.url})")
-                draft = write_segment(llm, profile, "Fresh: Engineering & AI", "What happened, why it matters, and the lesson for engineers", doc)
+                try:
+                    draft = write_segment(llm, profile, "Fresh: Engineering & AI", "What happened, why it matters, and the lesson for engineers", doc)
+                except Exception as e:
+                    print(f"  couldn't write the fresh segment: {e}")
+            if doc and draft:
                 source = Source(title=doc.title, author=doc.publisher, year=int(doc.published[:4]) if doc.published else None,
                                 url=doc.url, format="news")
                 segments.append(_to_segment(draft, "Fresh: Engineering & AI", True, source,
