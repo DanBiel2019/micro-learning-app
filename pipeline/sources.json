@@ -1,0 +1,680 @@
+{
+ "seeds": [
+  {
+   "wiki": "Survivorship_bias",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Abraham Wald and the WWII bombers: armor where the holes aren't"
+  },
+  {
+   "wiki": "Goodhart's_law",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "When a measure becomes a target it stops measuring"
+  },
+  {
+   "wiki": "Perverse_incentive",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "The cobra effect and other bounties that backfired"
+  },
+  {
+   "wiki": "McNamara_fallacy",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Vietnam body counts: measuring what's easy and ignoring what matters"
+  },
+  {
+   "wiki": "Campbell's_law",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Quantitative indicators corrupt the processes they monitor"
+  },
+  {
+   "wiki": "Streetlight_effect",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Searching where the light is, not where the problem is"
+  },
+  {
+   "wiki": "Simpson's_paradox",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "The Berkeley admissions data and aggregates that lie"
+  },
+  {
+   "wiki": "Hawthorne_effect",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Being observed changes the behavior you're measuring"
+  },
+  {
+   "wiki": "Normalization_of_deviance",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "How small accepted anomalies become the new normal",
+   "book": {
+    "title": "The Challenger Launch Decision",
+    "author": "Diane Vaughan",
+    "year": 1996
+   }
+  },
+  {
+   "wiki": "Swiss_cheese_model",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Accidents need the holes in every layer to line up",
+   "book": {
+    "title": "Human Error",
+    "author": "James Reason",
+    "year": 1990
+   }
+  },
+  {
+   "wiki": "Regression_toward_the_mean",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Why praise seems to backfire and punishment seems to work",
+   "book": {
+    "title": "Thinking, Fast and Slow",
+    "author": "Daniel Kahneman",
+    "year": 2011
+   }
+  },
+  {
+   "wiki": "Little's_law",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Queue length, throughput and wait time are one equation"
+  },
+  {
+   "wiki": "Braess's_paradox",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Adding capacity to a network can make everyone slower"
+  },
+  {
+   "wiki": "Jevons_paradox",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Efficiency gains that increase total consumption"
+  },
+  {
+   "wiki": "Lindy_effect",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "The longer something has survived, the longer it's likely to last",
+   "book": {
+    "title": "Antifragile",
+    "author": "Nassim Nicholas Taleb",
+    "year": 2012
+   }
+  },
+  {
+   "wiki": "Base_rate_fallacy",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Why a 99% accurate alert can still be mostly false alarms"
+  },
+  {
+   "wiki": "Hindsight_bias",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Knew-it-all-along thinking that ruins postmortems"
+  },
+  {
+   "wiki": "Tragedy_of_the_commons",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "Shared resources that everyone rationally overuses"
+  },
+  {
+   "wiki": "Cascading_failure",
+   "topic": "Systems & Measurement",
+   "adjacent": false,
+   "angle": "How one overloaded component takes down the rest"
+  },
+  {
+   "wiki": "Therac-25",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "A race condition in a radiation machine and the overconfidence around it"
+  },
+  {
+   "wiki": "Ariane_flight_V88",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Reused code, an overflow, and a 370 million dollar fireworks show"
+  },
+  {
+   "wiki": "Mars_Climate_Orbiter",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Pound-seconds versus newton-seconds: an interface mismatch"
+  },
+  {
+   "wiki": "Knight_Capital_Group",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "The 2012 deployment that lost 440 million dollars in 45 minutes"
+  },
+  {
+   "wiki": "Northeast_blackout_of_2003",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "A silent alarm system and 55 million people in the dark"
+  },
+  {
+   "wiki": "Morris_worm",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "The 1988 worm that taught the internet about trust"
+  },
+  {
+   "wiki": "Year_2000_problem",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "The bug that was fixed so well people think it was a hoax"
+  },
+  {
+   "wiki": "ELIZA_effect",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Why people attribute understanding to simple programs"
+  },
+  {
+   "wiki": "Moravec's_paradox",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Hard things are easy for machines and easy things are hard"
+  },
+  {
+   "wiki": "Clever_Hans",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "A horse that 'did math' and what it teaches about AI shortcuts"
+  },
+  {
+   "wiki": "Conway's_law",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Systems mirror the communication structure of the teams that build them"
+  },
+  {
+   "wiki": "Fallacies_of_distributed_computing",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "The network is reliable, latency is zero, and other lies"
+  },
+  {
+   "wiki": "Byzantine_fault",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Agreeing on the truth when some nodes lie or fail strangely"
+  },
+  {
+   "wiki": "Two_Generals'_Problem",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Why perfect acknowledgment over an unreliable link is impossible"
+  },
+  {
+   "wiki": "Thundering_herd_problem",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "When everything retries at once"
+  },
+  {
+   "wiki": "2021_Facebook_outage",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "A BGP withdrawal that locked engineers out of their own buildings"
+  },
+  {
+   "wiki": "2024_CrowdStrike-related_IT_outages",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "One content update and millions of blue screens"
+  },
+  {
+   "wiki": "Automation_bias",
+   "topic": "Technology & AI",
+   "adjacent": false,
+   "angle": "Trusting the machine over your own eyes"
+  },
+  {
+   "wiki": "Pygmalion_effect",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Expectations that shape performance"
+  },
+  {
+   "wiki": "Abilene_paradox",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "A group trip nobody wanted to take"
+  },
+  {
+   "wiki": "Groupthink",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "The Bay of Pigs and the cost of easy agreement"
+  },
+  {
+   "wiki": "Bystander_effect",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Why everyone on the incident bridge assumes someone else will act"
+  },
+  {
+   "wiki": "Psychological_safety",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Google's Project Aristotle and speaking up",
+   "book": {
+    "title": "The Fearless Organization",
+    "author": "Amy Edmondson",
+    "year": 2018
+   }
+  },
+  {
+   "wiki": "Peter_principle",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Promoted until incompetent"
+  },
+  {
+   "wiki": "Dunning–Kruger_effect",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "What the research actually says, and what it doesn't"
+  },
+  {
+   "wiki": "Crew_resource_management",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "How aviation taught captains to listen to junior crew"
+  },
+  {
+   "wiki": "Tenerife_airport_disaster",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "The deadliest accident in aviation and a hierarchy that couldn't be questioned"
+  },
+  {
+   "wiki": "United_Airlines_Flight_173",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "A crew fixated on a landing gear light while the fuel ran out"
+  },
+  {
+   "wiki": "Mission-type_tactics",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Auftragstaktik: commander's intent over detailed orders"
+  },
+  {
+   "wiki": "Ringelmann_effect",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Why individual effort drops as teams grow"
+  },
+  {
+   "wiki": "Law_of_triviality",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Bikeshedding: long debates about small things"
+  },
+  {
+   "wiki": "Chicago_Tylenol_murders",
+   "topic": "Leadership",
+   "adjacent": false,
+   "angle": "Johnson & Johnson's 1982 recall and crisis leadership"
+  },
+  {
+   "wiki": "Steven_Sasson",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "Kodak invented the digital camera in 1975 and shelved it"
+  },
+  {
+   "wiki": "New_Coke",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "Taste tests that measured the wrong thing"
+  },
+  {
+   "wiki": "Andon_(manufacturing)",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "Letting anyone stop the line",
+   "book": {
+    "title": "The Toyota Way",
+    "author": "Jeffrey Liker",
+    "year": 2004
+   }
+  },
+  {
+   "wiki": "NUMMI",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "GM's worst plant became one of its best under Toyota's system"
+  },
+  {
+   "wiki": "Blockbuster_(retailer)",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "Turning down Netflix and the comfort of current customers"
+  },
+  {
+   "wiki": "Sunk_cost",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "The Concorde fallacy and throwing good money after bad"
+  },
+  {
+   "wiki": "Theory_of_constraints",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "The bottleneck sets the pace of the whole system",
+   "book": {
+    "title": "The Goal",
+    "author": "Eliyahu M. Goldratt",
+    "year": 1984
+   }
+  },
+  {
+   "wiki": "Kaizen",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "Small continuous improvements that compound"
+  },
+  {
+   "wiki": "W._Edwards_Deming",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "Quality as a system property, not a worker problem",
+   "book": {
+    "title": "Out of the Crisis",
+    "author": "W. Edwards Deming",
+    "year": 1982
+   }
+  },
+  {
+   "wiki": "Planning_fallacy",
+   "topic": "Business & Entrepreneurship",
+   "adjacent": false,
+   "angle": "The Sydney Opera House and why estimates are always optimistic"
+  },
+  {
+   "wiki": "Post-it_note",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "A failed adhesive that waited years for its problem"
+  },
+  {
+   "wiki": "Skunk_Works",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "Small teams, few rules, and the U-2 in eight months"
+  },
+  {
+   "wiki": "Bell_Labs",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "How hallway collisions produced the transistor",
+   "book": {
+    "title": "The Idea Factory",
+    "author": "Jon Gertner",
+    "year": 2012
+   }
+  },
+  {
+   "wiki": "PARC_(company)",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "Inventing the future and letting others ship it"
+  },
+  {
+   "wiki": "Lateral_thinking",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "Edward de Bono's tools for escaping obvious answers"
+  },
+  {
+   "wiki": "Rubber_duck_debugging",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "Explaining a problem out loud to solve it"
+  },
+  {
+   "wiki": "Fosbury_flop",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "An awkward technique that rewrote the high jump"
+  },
+  {
+   "wiki": "The_Design_of_Everyday_Things",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "Norman doors and why bad design looks like user error",
+   "book": {
+    "title": "The Design of Everyday Things",
+    "author": "Don Norman",
+    "year": 1988
+   }
+  },
+  {
+   "wiki": "Desire_path",
+   "topic": "Creativity",
+   "adjacent": false,
+   "angle": "Paths people actually walk versus the ones designers drew"
+  },
+  {
+   "wiki": "1854_Broad_Street_cholera_outbreak",
+   "topic": "Medicine & Public Health",
+   "adjacent": true,
+   "angle": "John Snow's map and the pump handle"
+  },
+  {
+   "wiki": "Florence_Nightingale",
+   "topic": "Medicine & Public Health",
+   "adjacent": true,
+   "angle": "Statistics and the rose diagram that changed army hospitals"
+  },
+  {
+   "wiki": "Gimli_Glider",
+   "topic": "Aviation & Space",
+   "adjacent": true,
+   "angle": "A 767 out of fuel after a units conversion error"
+  },
+  {
+   "wiki": "Apollo_13",
+   "topic": "Aviation & Space",
+   "adjacent": true,
+   "angle": "Fitting a square filter into a round hole"
+  },
+  {
+   "wiki": "Space_Shuttle_Challenger_disaster",
+   "topic": "Aviation & Space",
+   "adjacent": true,
+   "angle": "O-rings, cold weather, and a decision meeting"
+  },
+  {
+   "wiki": "Space_Shuttle_Columbia_disaster",
+   "topic": "Aviation & Space",
+   "adjacent": true,
+   "angle": "Foam strikes everyone had learned to live with"
+  },
+  {
+   "wiki": "Chernobyl_disaster",
+   "topic": "Engineering Disasters",
+   "adjacent": true,
+   "angle": "A safety test that removed the safety"
+  },
+  {
+   "wiki": "Tacoma_Narrows_Bridge_(1940)",
+   "topic": "Engineering Disasters",
+   "adjacent": true,
+   "angle": "Galloping Gertie and aeroelastic flutter"
+  },
+  {
+   "wiki": "Hyatt_Regency_walkway_collapse",
+   "topic": "Engineering Disasters",
+   "adjacent": true,
+   "angle": "A small design change nobody re-checked"
+  },
+  {
+   "wiki": "Citicorp_Center_engineering_crisis",
+   "topic": "Engineering Disasters",
+   "adjacent": true,
+   "angle": "An engineer who found his own fatal flaw and spoke up"
+  },
+  {
+   "wiki": "Great_Molasses_Flood",
+   "topic": "Engineering Disasters",
+   "adjacent": true,
+   "angle": "A tank that leaked for years before it burst"
+  },
+  {
+   "wiki": "Vasa_(ship)",
+   "topic": "Engineering Disasters",
+   "adjacent": true,
+   "angle": "A warship that sank 1,300 meters into its maiden voyage"
+  },
+  {
+   "wiki": "Millennium_Bridge,_London",
+   "topic": "Engineering Disasters",
+   "adjacent": true,
+   "angle": "A bridge that wobbled because people walked in step"
+  },
+  {
+   "wiki": "Sabermetrics",
+   "topic": "Sports Analytics",
+   "adjacent": true,
+   "angle": "Moneyball and measuring what actually wins"
+  },
+  {
+   "wiki": "Berlin_Blockade",
+   "topic": "Military History & Logistics",
+   "adjacent": true,
+   "angle": "The airlift that ran like a production line"
+  },
+  {
+   "wiki": "Red_Ball_Express",
+   "topic": "Military History & Logistics",
+   "adjacent": true,
+   "angle": "Trucks, fuel, and the real limit on Patton's advance"
+  },
+  {
+   "wiki": "Operation_Mincemeat",
+   "topic": "Military History & Logistics",
+   "adjacent": true,
+   "angle": "Deception that worked because it fed existing beliefs"
+  },
+  {
+   "wiki": "1983_Soviet_nuclear_false_alarm_incident",
+   "topic": "Military History & Logistics",
+   "adjacent": true,
+   "angle": "Stanislav Petrov doubting a confident alarm"
+  },
+  {
+   "wiki": "OODA_loop",
+   "topic": "Military History & Logistics",
+   "adjacent": true,
+   "angle": "John Boyd and decision speed"
+  },
+  {
+   "wiki": "Four_Pests_campaign",
+   "topic": "Ecology & Complex Systems",
+   "adjacent": true,
+   "angle": "Killing sparrows and the locust plague that followed"
+  },
+  {
+   "wiki": "Cane_toads_in_Australia",
+   "topic": "Ecology & Complex Systems",
+   "adjacent": true,
+   "angle": "A biological fix that became the problem"
+  },
+  {
+   "wiki": "History_of_wolves_in_Yellowstone",
+   "topic": "Ecology & Complex Systems",
+   "adjacent": true,
+   "angle": "A trophic cascade from one reintroduction"
+  },
+  {
+   "wiki": "Ford_Pinto",
+   "topic": "Business Ethics",
+   "adjacent": true,
+   "angle": "A cost-benefit memo and a fuel tank"
+  },
+  {
+   "wiki": "Overjustification_effect",
+   "topic": "Psychology",
+   "adjacent": true,
+   "angle": "How rewards can kill intrinsic motivation"
+  },
+  {
+   "wiki": "Fitts's_law",
+   "topic": "Design & Human Factors",
+   "adjacent": true,
+   "angle": "Why big buttons near your thumb get clicked"
+  },
+  {
+   "wiki": "Toyota_Production_System",
+   "topic": "Manufacturing & Operations",
+   "adjacent": true,
+   "angle": "Just-in-time and jidoka"
+  },
+  {
+   "wiki": "Bay_of_Pigs_Invasion",
+   "topic": "History",
+   "adjacent": true,
+   "angle": "A failed invasion and how Kennedy changed his decision process"
+  }
+ ],
+ "alreadyCovered": [
+  "Three_Mile_Island_accident",
+  "Ignaz_Semmelweis",
+  "Air_France_Flight_447",
+  "Boeing_B-17_Flying_Fortress"
+ ],
+ "discovery": {
+  "categories": [
+   "Engineering failures",
+   "Cognitive biases",
+   "Adages",
+   "Systems thinking",
+   "Statistical paradoxes",
+   "Organizational behavior",
+   "Lean manufacturing",
+   "Aviation accidents and incidents caused by pilot error"
+  ]
+ },
+ "freshFeeds": [
+  {
+   "name": "Cloudflare Blog",
+   "url": "https://blog.cloudflare.com/rss/"
+  },
+  {
+   "name": "The Register",
+   "url": "https://www.theregister.com/headlines.atom"
+  },
+  {
+   "name": "Ars Technica",
+   "url": "https://feeds.arstechnica.com/arstechnica/technology-lab"
+  },
+  {
+   "name": "InfoQ",
+   "url": "https://feed.infoq.com/"
+  },
+  {
+   "name": "Simon Willison",
+   "url": "https://simonwillison.net/atom/everything/"
+  },
+  {
+   "name": "Hacker News (best)",
+   "url": "https://hnrss.org/best"
+  }
+ ]
+}

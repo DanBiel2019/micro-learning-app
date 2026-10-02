@@ -35,11 +35,13 @@ def fetch_ledger(repo: str) -> list[dict]:
 
 
 def covered_items(ledger: list[dict]) -> list[str]:
-    items = []
-    for ep in ledger:
-        for seg in ep.get("segments", []):
-            items.append(f"{seg['title']} ({seg['source']})")
-    return items
+    """Human-readable list for the Claude prompt."""
+    return [f"{seg['title']} ({seg['source']})" for ep in ledger for seg in ep.get("segments", [])]
+
+
+def covered_refs(ledger: list[dict]) -> list[str]:
+    """Wikipedia titles / article URLs already used, for the local generator."""
+    return [seg["ref"] for ep in ledger for seg in ep.get("segments", []) if seg.get("ref")]
 
 
 def main() -> None:
@@ -47,6 +49,8 @@ def main() -> None:
     ap.add_argument("--repo", required=True, help="owner/repo hosting the releases")
     ap.add_argument("--date", default=date.today().isoformat())
     ap.add_argument("--script", type=Path, help="hand-written Episode JSON; skips generation")
+    ap.add_argument("--engine", choices=["local", "claude"], default="local",
+                    help="local: open-weights model via llama.cpp (default); claude: Anthropic API")
     ap.add_argument("--out", type=Path, default=HERE / "out")
     args = ap.parse_args()
 
@@ -58,14 +62,22 @@ def main() -> None:
         print(f"{tag} is already published; nothing to do.")
         return
 
+    refs: list[str | None]
     if args.script:
         print(f"Loading script {args.script}")
         episode = Episode.model_validate_json(args.script.read_text())
+        refs = [None] * len(episode.segments)
+    elif args.engine == "local":
+        from generate_local import generate_episode
+
+        print(f"Generating episode for {today} with a local model ({len(ledger)} past episodes in ledger)")
+        episode, refs = generate_episode(profile, covered_refs(ledger), today)
     else:
         from generate import generate_episode
 
-        print(f"Generating episode for {today} ({len(ledger)} past episodes in ledger)")
+        print(f"Generating episode for {today} with Claude ({len(ledger)} past episodes in ledger)")
         episode = generate_episode(profile, covered_items(ledger), today)
+        refs = [s.source.url for s in episode.segments]
 
     args.out.mkdir(parents=True, exist_ok=True)
     (args.out / "episode.json").write_text(episode.model_dump_json(indent=2))
@@ -104,7 +116,8 @@ def main() -> None:
         "tag": tag,
         "date": today.isoformat(),
         "title": episode.title,
-        "segments": [{"title": s.title, "topic": s.topic, "source": s.source.title} for s in episode.segments],
+        "segments": [{"title": s.title, "topic": s.topic, "source": s.source.title, "ref": r}
+                     for s, r in zip(episode.segments, refs)],
     })
     (args.out / "ledger.json").write_text(json.dumps(ledger, indent=2))
 
