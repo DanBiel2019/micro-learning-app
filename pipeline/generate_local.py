@@ -378,6 +378,16 @@ def generate_episode(profile: dict, covered: list[str], today: date) -> tuple[Ep
     return Episode(date=today.isoformat(), title=framing.title, theme=framing.theme, segments=segments), refs
 
 
+def _fix_value_labels(visual: dict) -> dict:
+    """Models sometimes put just the unit ("minutes") in valueLabel; show the number too."""
+    for item in visual["items"]:
+        label, value = item.get("valueLabel"), item.get("value")
+        if value is not None and (not label or not re.search(r"\d", label)):
+            number = f"{value:g}"
+            item["valueLabel"] = f"{number} {label}".strip() if label else number
+    return visual
+
+
 def _to_segment(d: DraftSegment, topic: str, adjacent: bool, source: Source, reading: list[Reading]) -> Segment:
     title = d.title
     if title.lower().startswith(("fresh", topic.lower())) or title.strip().lower() == topic.lower():
@@ -385,7 +395,7 @@ def _to_segment(d: DraftSegment, topic: str, adjacent: bool, source: Source, rea
     return Segment(
         id="s0", topic=topic, adjacent=adjacent, style=d.style, kicker=d.kicker, title=title,
         summary=d.summary, keyPoints=d.keyPoints, takeaway=d.takeaway, challenge=d.challenge, source=source,
-        visual=Visual.model_validate(d.visual.model_dump()),
+        visual=Visual.model_validate(_fix_value_labels(d.visual.model_dump())),
         script=[Line(speaker=l.speaker, text=l.text) for l in d.script],
         deeperQuestions=d.deeperQuestions, furtherReading=reading,
     )
