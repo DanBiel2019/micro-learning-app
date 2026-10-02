@@ -1,8 +1,8 @@
 package com.example.aigeneratedandroid.microlearning
 
 import com.example.aigeneratedandroid.microlearning.curation.ContentCurationEngine
-import com.example.aigeneratedandroid.microlearning.data.ContentBank
 import com.example.aigeneratedandroid.microlearning.data.InMemoryFeedbackStore
+import com.example.aigeneratedandroid.microlearning.model.Line
 import com.example.aigeneratedandroid.microlearning.model.UserProfile
 import com.example.aigeneratedandroid.microlearning.narration.NarrationFormatter
 import org.junit.Assert.assertEquals
@@ -13,36 +13,42 @@ import java.time.LocalDate
 
 class NarrationFormatterTest {
 
-    private val feed = ContentCurationEngine(ContentBank.all, InMemoryFeedbackStore())
-        .buildFeed(UserProfile.default(), LocalDate.of(2026, 10, 1))
-    private val chunks = NarrationFormatter.format(feed)
+    private val episode = ContentCurationEngine(TestData.library, InMemoryFeedbackStore())
+        .buildEpisode(UserProfile.default(), LocalDate.of(2026, 10, 1))
+    private val chunks = NarrationFormatter.format(episode)
 
     @Test
-    fun `one chunk per card, intro only on the first`() {
-        assertEquals(feed.cards.size, chunks.size)
+    fun `one chunk per segment, intro only on the first`() {
+        assertEquals(episode.segments.size, chunks.size)
         assertTrue(chunks.first().segments.first().startsWith("Good morning"))
         chunks.drop(1).forEach { assertFalse(it.segments.first().startsWith("Good morning")) }
     }
 
     @Test
-    fun `chunks hand off to the next card and close the set`() {
-        chunks.zip(feed.cards.drop(1)).forEach { (chunk, next) ->
+    fun `chunks hand off to the next segment and close the set`() {
+        chunks.zip(episode.segments.drop(1)).forEach { (chunk, next) ->
             assertEquals("Next up: ${next.title}.", chunk.segments.last())
         }
         assertTrue(chunks.last().segments.last().startsWith("That's the set for today"))
     }
 
     @Test
-    fun `every card in the library narrates cleanly`() {
-        ContentBank.all.forEachIndexed { i, card ->
-            val chunk = NarrationFormatter.chunkFor(card, i, ContentBank.all.size, "theme", null)
-            chunk.segments.forEach { seg ->
-                assertFalse("Raw symbol in: $seg", seg.contains(Regex("[\\[\\]{}<>*_#|∩]")))
-                assertTrue(seg.isNotBlank())
+    fun `every library segment narrates cleanly`() {
+        TestData.library.forEachIndexed { i, seg ->
+            val chunk = NarrationFormatter.chunkFor(seg, i, TestData.library.size, "theme", null)
+            chunk.segments.forEach { s ->
+                assertFalse("Raw symbol in: $s", s.contains(Regex("[\\[\\]{}<>*_#|∩]")))
+                assertTrue(s.isNotBlank())
             }
-            // Roughly a one-to-two minute listen per card.
-            assertTrue("${card.id}: ${chunk.estimatedSeconds}s", chunk.estimatedSeconds in 45..150)
+            assertTrue("${seg.id}: ${chunk.estimatedSeconds}s", chunk.estimatedSeconds in 45..150)
         }
+    }
+
+    @Test
+    fun `scripted segments are read from their script`() {
+        val seg = TestData.library.first().copy(script = listOf(Line("host", "Hello there."), Line("cohost", "Hi & welcome.")))
+        val chunk = NarrationFormatter.chunkFor(seg, 0, 1, "theme", null)
+        assertEquals(listOf("Hello there.", "Hi and welcome."), chunk.segments)
     }
 
     @Test

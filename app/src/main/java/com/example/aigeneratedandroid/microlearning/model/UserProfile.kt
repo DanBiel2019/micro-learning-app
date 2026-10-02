@@ -1,35 +1,22 @@
 package com.example.aigeneratedandroid.microlearning.model
 
-enum class DepthLevel { BEGINNER, INTERMEDIATE, ADVANCED }
-
 /**
- * Answers from the onboarding quiz. [topics] and [preferredStyles] drive selection weight
- * in ContentCurationEngine; [chunkMinutes]/[sessionMinutes] decide how many cards ship per day.
+ * Answers from the onboarding quiz. Drives the offline curation of the bundled library; the
+ * daily studio episodes are written from the matching pipeline/profile.json.
  */
 data class UserProfile(
-    val lovedBooks: List<String>,
     val followedAuthors: List<String>,
     val topics: List<String>,
-    val preferredStyles: List<LearningStyle>,
-    val preferredFormats: List<SourceFormat>,
+    /** Segment.style values the listener prefers, e.g. "story", "counterintuitive". */
+    val preferredStyles: List<String>,
     val sessionMinutes: Int,
-    val chunkMinutes: Int,
-    val depthLevel: DepthLevel,
-    val consumptionMoment: String
+    val chunkMinutes: Int
 ) {
-    val cardsPerSession: Int
-        get() = (sessionMinutes / chunkMinutes).coerceIn(5, 10)
+    val segmentsPerSession: Int
+        get() = (sessionMinutes / chunkMinutes).coerceIn(3, 10)
 
     companion object {
-        /** Seeded from the user's own onboarding answers, editable later from the app. */
         fun default(): UserProfile = UserProfile(
-            lovedBooks = listOf(
-                "Crucial Conversations",
-                "Crucial Accountability",
-                "The Phoenix Project",
-                "The 7 Habits of Highly Effective People",
-                "A More Beautiful Question"
-            ),
             followedAuthors = listOf(
                 "Kerry Patterson",
                 "Gene Kim",
@@ -44,12 +31,9 @@ data class UserProfile(
                 "Creativity",
                 "Systems & Measurement"
             ),
-            preferredStyles = listOf(LearningStyle.STORY, LearningStyle.COUNTERINTUITIVE),
-            preferredFormats = listOf(SourceFormat.PODCAST),
+            preferredStyles = listOf("story", "counterintuitive"),
             sessionMinutes = 10,
-            chunkMinutes = 2,
-            depthLevel = DepthLevel.ADVANCED,
-            consumptionMoment = "Morning routine (coffee / breakfast)"
+            chunkMinutes = 2
         )
     }
 }

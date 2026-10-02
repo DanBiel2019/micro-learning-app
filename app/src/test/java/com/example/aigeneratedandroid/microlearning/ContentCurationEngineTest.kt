@@ -1,7 +1,6 @@
 package com.example.aigeneratedandroid.microlearning
 
 import com.example.aigeneratedandroid.microlearning.curation.ContentCurationEngine
-import com.example.aigeneratedandroid.microlearning.data.ContentBank
 import com.example.aigeneratedandroid.microlearning.data.InMemoryFeedbackStore
 import com.example.aigeneratedandroid.microlearning.data.Reaction
 import com.example.aigeneratedandroid.microlearning.model.UserProfile
@@ -18,39 +17,39 @@ class ContentCurationEngineTest {
 
     @Test
     fun `library topics all match profile topics`() {
-        val unknown = ContentBank.all.map { it.topic }.toSet() - profile.topics.toSet()
+        val unknown = TestData.library.map { it.topic }.toSet() - profile.topics.toSet()
         assertTrue("Unmatched topics: $unknown", unknown.isEmpty())
-        assertEquals(ContentBank.all.size, ContentBank.all.map { it.id }.toSet().size)
+        assertEquals(TestData.library.size, TestData.library.map { it.id }.toSet().size)
     }
 
     @Test
     fun `feed has the session size, no duplicates, and varied topics`() {
-        val feed = ContentCurationEngine(ContentBank.all, InMemoryFeedbackStore()).buildFeed(profile, day)
-        assertEquals(profile.cardsPerSession, feed.cards.size)
-        assertEquals(feed.cards.size, feed.cards.map { it.id }.toSet().size)
-        assertTrue(feed.cards.groupingBy { it.topic }.eachCount().values.all { it <= 2 })
-        feed.cards.zipWithNext().forEach { (a, b) -> assertFalse(a.topic == b.topic) }
+        val feed = ContentCurationEngine(TestData.library, InMemoryFeedbackStore()).buildEpisode(profile, day)
+        assertEquals(profile.segmentsPerSession, feed.segments.size)
+        assertEquals(feed.segments.size, feed.segments.map { it.id }.toSet().size)
+        assertTrue(feed.segments.groupingBy { it.topic }.eachCount().values.all { it <= 2 })
+        feed.segments.zipWithNext().forEach { (a, b) -> assertFalse(a.topic == b.topic) }
         assertTrue(feed.theme.isNotBlank())
-        assertEquals(feed.cards.first().challenge, feed.challenge)
+        assertTrue(feed.offline)
     }
 
     @Test
     fun `same day gives the same feed even after marking it shown`() {
         val store = InMemoryFeedbackStore()
-        val engine = ContentCurationEngine(ContentBank.all, store)
-        val first = engine.buildFeed(profile, day)
-        store.markShown(first.cards.map { it.id }, day.toEpochDay())
-        assertEquals(first.cards.map { it.id }, engine.buildFeed(profile, day).cards.map { it.id })
+        val engine = ContentCurationEngine(TestData.library, store)
+        val first = engine.buildEpisode(profile, day)
+        store.markShown(first.segments.map { it.id }, day.toEpochDay())
+        assertEquals(first.segments.map { it.id }, engine.buildEpisode(profile, day).segments.map { it.id })
     }
 
     @Test
     fun `recently shown cards are mostly avoided the next day`() {
         val store = InMemoryFeedbackStore()
-        val engine = ContentCurationEngine(ContentBank.all, store)
-        val first = engine.buildFeed(profile, day)
-        store.markShown(first.cards.map { it.id }, day.toEpochDay())
-        val second = engine.buildFeed(profile, day.plusDays(1))
-        val repeats = second.cards.map { it.id }.intersect(first.cards.map { it.id }.toSet())
+        val engine = ContentCurationEngine(TestData.library, store)
+        val first = engine.buildEpisode(profile, day)
+        store.markShown(first.segments.map { it.id }, day.toEpochDay())
+        val second = engine.buildEpisode(profile, day.plusDays(1))
+        val repeats = second.segments.map { it.id }.intersect(first.segments.map { it.id }.toSet())
         assertTrue("Too many repeats: $repeats", repeats.size <= 1)
     }
 
@@ -58,24 +57,24 @@ class ContentCurationEngineTest {
     fun `heavily disliked cards are never served`() {
         val store = InMemoryFeedbackStore()
         repeat(3) { store.record("sys-01", Reaction.SKIPPED) }
-        val engine = ContentCurationEngine(ContentBank.all, store)
+        val engine = ContentCurationEngine(TestData.library, store)
         (0L until 30L).forEach { offset ->
-            val feed = engine.buildFeed(profile, day.plusDays(offset))
-            assertFalse(feed.cards.any { it.id == "sys-01" })
+            val feed = engine.buildEpisode(profile, day.plusDays(offset))
+            assertFalse(feed.segments.any { it.id == "sys-01" })
         }
     }
 
     @Test
     fun `liking a topic makes it show up more over a month`() {
         fun countLeadership(store: InMemoryFeedbackStore): Int {
-            val engine = ContentCurationEngine(ContentBank.all, store)
+            val engine = ContentCurationEngine(TestData.library, store)
             return (0L until 60L).sumOf { offset ->
-                engine.buildFeed(profile, day.plusDays(offset)).cards.count { it.topic == ContentBank.TOPIC_LEADERSHIP }
+                engine.buildEpisode(profile, day.plusDays(offset)).segments.count { it.topic == "Leadership" }
             }
         }
         val neutral = countLeadership(InMemoryFeedbackStore())
         val fan = InMemoryFeedbackStore().apply {
-            ContentBank.all.filter { it.topic == ContentBank.TOPIC_LEADERSHIP }.forEach { card ->
+            TestData.library.filter { it.topic == "Leadership" }.forEach { card ->
                 repeat(3) { record(card.id, Reaction.LIKED) }
             }
         }
@@ -84,8 +83,8 @@ class ContentCurationEngineTest {
 
     @Test
     fun `related prefers same author then same topic`() {
-        val engine = ContentCurationEngine(ContentBank.all, InMemoryFeedbackStore())
-        val crucial = ContentBank.byId("lead-01")!!
+        val engine = ContentCurationEngine(TestData.library, InMemoryFeedbackStore())
+        val crucial = TestData.byId("lead-01")
         assertEquals("lead-02", engine.related(crucial).first().id)
         assertTrue(engine.related(crucial, exclude = setOf("lead-02")).first().topic == crucial.topic)
     }

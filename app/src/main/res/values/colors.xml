@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#FAF7F2</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="ink">#1E1B18</color>
-    <color name="ink_muted">#6B645C</color>
-    <color name="accent">#C2571A</color>
-    <color name="accent_soft">#F6E3D6</color>
-    <color name="ascii_bg">#F1ECE4</color>
-    <color name="divider">#E6DFD5</color>
+    <color name="bg">#F7F3EC</color>
+    <color name="bg_dark">#12100E</color>
+    <color name="accent">#D2551E</color>
 </resources>

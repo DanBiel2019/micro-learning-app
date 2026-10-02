@@ -1,20 +1,18 @@
 package com.example.aigeneratedandroid.microlearning.narration
 
-import com.example.aigeneratedandroid.microlearning.model.DailyFeed
-import com.example.aigeneratedandroid.microlearning.model.IdeaCard
-import com.example.aigeneratedandroid.microlearning.model.LearningStyle
+import com.example.aigeneratedandroid.microlearning.model.Episode
+import com.example.aigeneratedandroid.microlearning.model.Segment
 
 /**
- * One spoken chunk of the feed (one card). [segments] are sentence-sized so playback can
- * pause and resume mid-card without restarting it.
+ * Spoken text for one segment when there's no studio audio (offline episodes read by the
+ * device's own TTS). [segments] are sentence-sized so playback can pause and resume mid-way.
  */
 data class NarrationChunk(
-    val cardId: String,
+    val segmentId: String,
     val segments: List<String>
 ) {
     val wordCount: Int get() = segments.sumOf { it.split(Regex("\\s+")).count(String::isNotBlank) }
 
-    /** At a relaxed ~150 words per minute, the pace used for the morning-coffee listen. */
     val estimatedSeconds: Int get() = (wordCount * 60 / WORDS_PER_MINUTE).coerceAtLeast(1)
 
     companion object {
@@ -23,61 +21,65 @@ data class NarrationChunk(
 }
 
 /**
- * Turns cards into podcast-style narration: an intro on the first chunk, the idea itself,
- * a bridge to the listener's own work (network engineering, observability, resilience), a
- * reflection prompt matching the card's style, the challenge, and a hand-off to the next card.
+ * Turns a segment into narration: an intro on the first one, the idea, a bridge to the
+ * listener's work (network engineering, observability, resilience), a reflection prompt
+ * matching the segment's style, the challenge, and a hand-off to the next segment.
+ * Segments that already have a written two-host script are read from that script instead.
  */
 object NarrationFormatter {
 
-    fun format(feed: DailyFeed): List<NarrationChunk> =
-        feed.cards.mapIndexed { i, card ->
-            chunkFor(card, i, feed.cards.size, feed.theme, feed.cards.getOrNull(i + 1))
+    fun format(episode: Episode): List<NarrationChunk> =
+        episode.segments.mapIndexed { i, seg ->
+            chunkFor(seg, i, episode.segments.size, episode.theme, episode.segments.getOrNull(i + 1))
         }
 
-    fun chunkFor(card: IdeaCard, index: Int, total: Int, theme: String, next: IdeaCard?): NarrationChunk {
+    fun chunkFor(seg: Segment, index: Int, total: Int, theme: String, next: Segment?): NarrationChunk {
+        if (seg.script.isNotEmpty()) {
+            return NarrationChunk(seg.id, seg.script.map { cleanForSpeech(it.text) })
+        }
         val parts = mutableListOf<String>()
 
         if (index == 0) {
             parts += "Good morning. Today's thread is: $theme."
             parts += "$total ideas, a couple of minutes each. Swipe to skip, tap to pause, and dig deeper on anything that sticks."
         }
-        parts += "Idea ${index + 1} of $total. ${card.title}."
-        parts += "This one comes from ${spokenSource(card)}."
-        parts += sentences(card.insight)
-        parts += sentences(bridgeFor(card))
-        parts += reflectionFor(card.style)
-        parts += "Your challenge for today. ${card.challenge}"
+        parts += "Idea ${index + 1} of $total. ${seg.title}."
+        parts += "This one comes from ${spokenSource(seg)}."
+        parts += sentences(seg.summary)
+        parts += sentences(bridgeFor(seg))
+        parts += reflectionFor(seg.style)
+        parts += "Your challenge for today. ${seg.challenge}"
         parts += if (next != null) {
             "Next up: ${next.title}."
         } else {
             "That's the set for today. Pick one challenge, just one, and try it before lunch."
         }
 
-        return NarrationChunk(card.id, parts.map(::cleanForSpeech).filter { it.isNotBlank() })
+        return NarrationChunk(seg.id, parts.map(::cleanForSpeech).filter { it.isNotBlank() })
     }
 
     /** Splits on sentence boundaries; keeps each segment short enough to resume cleanly. */
     fun sentences(text: String): List<String> =
         text.split(Regex("(?<=[.!?])\\s+")).map { it.trim() }.filter { it.isNotEmpty() }
 
-    private fun spokenSource(card: IdeaCard): String {
-        val source = card.sourceName.replace(Regex("\\s*\\(.*?\\)"), "")
-        val author = card.author.replace(Regex("\\s*\\(.*?\\)"), "")
+    private fun spokenSource(seg: Segment): String {
+        val source = seg.source.title.replace(Regex("\\s*\\(.*?\\)"), "")
+        val author = seg.source.author.replace(Regex("\\s*\\(.*?\\)"), "")
         return if (source.contains(author, ignoreCase = true)) source else "$source, by $author"
     }
 
-    /** Ties each topic back to the listener's day job. Picked deterministically per card. */
-    private fun bridgeFor(card: IdeaCard): String {
-        val options = BRIDGES[card.topic] ?: return ""
-        return options[Math.floorMod(card.id.hashCode(), options.size)]
+    /** Ties each topic back to the listener's day job. Picked deterministically per segment. */
+    private fun bridgeFor(seg: Segment): String {
+        val options = BRIDGES[seg.topic] ?: return ""
+        return options[Math.floorMod(seg.id.hashCode(), options.size)]
     }
 
-    private fun reflectionFor(style: LearningStyle): String = when (style) {
-        LearningStyle.COUNTERINTUITIVE -> "Sit with that for a second. What did you assume before you heard it?"
-        LearningStyle.STORY -> "Think of a time you watched this exact story play out, maybe from the inside."
-        LearningStyle.BIG_PICTURE -> "Zoom out. Where in your world is this pattern quietly running right now?"
-        LearningStyle.PRACTICAL -> "Picture the very next moment this week where you could actually use it."
-        LearningStyle.DATA_DRIVEN -> "Ask yourself which number in your world deserves this kind of agreement."
+    private fun reflectionFor(style: String): String = when (style) {
+        "counterintuitive" -> "Sit with that for a second. What did you assume before you heard it?"
+        "story" -> "Think of a time you watched this exact story play out, maybe from the inside."
+        "big_picture" -> "Zoom out. Where in your world is this pattern quietly running right now?"
+        "practical" -> "Picture the very next moment this week where you could actually use it."
+        else -> "Ask yourself which number in your world deserves this kind of agreement."
     }
 
     /** Strips characters TTS engines read literally or stumble over. */

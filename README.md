@@ -1,44 +1,65 @@
 # micro-learning-app
 
-A personal micro-learning feed for Android: each morning it curates five ideas from
-business, technology/AI, leadership, creativity, and systems & measurement, and reads
-them aloud podcast-style in ~1–2 minute chunks you can swipe, pause, or dig into.
+A personal morning podcast for Android. Every day a new ~10 minute episode arrives: two
+hosts walk through five ideas in roughly two-minute segments you can swipe between, pause,
+or dig into. Each segment has its own infographic, a live transcript, a challenge for the
+day, and cited sources.
+
+Episodes mix your core interests (systems and measurement, technology and AI, leadership,
+business, creativity) with adjacent fields (aviation safety, medicine, military history,
+behavioral economics, …) plus one fresh item from the last couple of months, so it never
+settles into the same rut.
 
 ## Download
 
 Grab the latest APK from [`release/`](release/), or download it directly:
-[micro-learning-v1.1-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v1.1-debug.apk).
+[micro-learning-v2.0-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v2.0-debug.apk).
 Install steps are in [release/README.md](release/README.md).
 
-## What's in it
+Episodes themselves are published as [GitHub Releases](https://github.com/DanBiel2019/micro-learning-app/releases)
+(`ep-YYYY-MM-DD`), one per day.
+
+## How it fits together
+
+```
+ GitHub Actions, daily                          Android app
+ ┌──────────────────────────────┐               ┌───────────────────────────────────────┐
+ │ pipeline/                    │   Release     │ EpisodeRepository  fetch + cache feed │
+ │  generate.py  Claude writes  │──feed.json──▶ │ PrefetchWorker     download overnight │
+ │  render_audio  Kokoro voices │  seg-N.mp3    │ PlaybackService    Media3, lock screen│
+ │  publish.py   GitHub Release │               │ Compose UI         infographics, etc. │
+ └──────────────────────────────┘               └───────────────────────────────────────┘
+```
+
+See [`pipeline/README.md`](pipeline/README.md) for the content pipeline and its one-time
+setup (an `ANTHROPIC_API_KEY` repository secret).
+
+### App
 
 ```
 app/src/main/java/com/example/aigeneratedandroid/
-  MainActivity.kt                 today's feed: pager, play/pause, reactions, go-deeper
+  MainActivity.kt          edge-to-edge Compose host
   microlearning/
-    model/        IdeaCard, UserProfile (onboarding answers), DailyFeed
-    data/         ContentBank (30 paraphrased, attributed ideas), FeedbackStore +
-                  SharedPrefsFeedbackStore (likes/skips/completions), FeedCache
-    curation/     ContentCurationEngine — weighted, date-seeded daily selection
-    narration/    NarrationFormatter (card -> spoken segments), NarrationPlayer (TTS)
-    ui/           CardPagerAdapter
+    model/       Episode/Segment/Visual (mirrors pipeline/schema.py), UserProfile
+    data/        EpisodeRepository (GitHub Releases feed, offline cache), PrefetchWorker,
+                 FeedbackStore (likes, skips, completions)
+    playback/    PlaybackService (Media3 session), EpisodePlayer (studio audio or device TTS)
+    curation/    ContentCurationEngine: offline episodes from the bundled library
+    narration/   NarrationFormatter + NarrationPlayer: device-voice fallback
+    ui/          Home (generated cover art, chapters, history), Segment pages
+                 (Infographic, transcript, go deeper), MiniPlayer, theme
+app/src/main/assets/library.json   30 classic ideas with infographic specs (offline fallback)
 ```
 
-**Curation.** A date-seeded weighted draw, so a day's feed is stable across relaunches.
-Weights combine topic affinity (learned from feedback), preferred styles (story,
-counterintuitive), followed authors, a 14-day cooldown on repeats, and per-card scores;
-cards you thumbs-down repeatedly stop appearing. Each day has a rotating lead topic that
-sets the theme; no topic appears twice in a row or more than twice a day.
-
-**Narration.** Each card becomes one chunk: intro (first card only), the idea, a bridge
-to network engineering / observability / resilience work, a reflection prompt matched to
-the card's style, the challenge, and a hand-off to the next card. Played through Android
-TextToSpeech one sentence at a time, so pause/resume continues mid-card. Finishing a card
-auto-advances, so the whole set plays hands-free.
-
-**Feedback loop.** 👍 / 👎 on each card, finishing a card, and "Go deeper" (which queues a
-related card — same author, then topic — right after the current one) all feed back into
-tomorrow's weights.
+- **Infographics** are drawn natively from a small spec (`flow`, `cycle`, `compare`,
+  `stats`, `bars`, `venn`, `ladder`, `timeline`, `quote`), so every new episode gets
+  illustrations without shipping artwork, and they adapt to dark mode.
+- **Playback** keeps going with the screen off, with lock-screen and headphone controls,
+  ±15/30 s skips, 0.85–1.5× speed, and swipe-to-skip between segments. The transcript
+  highlights the line being spoken and tapping a line jumps to it.
+- **Offline**: the newest episode's audio is downloaded in the background on Wi-Fi. With no
+  connection at all, the app builds a set from the bundled library and reads it with the
+  phone's best available voice.
 
 ## Building
 
@@ -46,15 +67,8 @@ Requires JDK 17 and the Android SDK (platform 34). With `local.properties` point
 your SDK (`sdk.dir=...`):
 
 ```
-./gradlew testDebugUnitTest   # curation + narration unit tests (JVM, no device)
+./gradlew testDebugUnitTest   # curation, narration and feed-format tests
 ./gradlew assembleDebug
 ```
 
 The debug APK lands at `app/build/outputs/apk/debug/app-debug.apk`.
-
-## Next ideas
-
-- Onboarding/profile editing screen (profile is currently seeded in `UserProfile.default()`)
-- Generated deep dives via an LLM for "Go deeper", instead of library-only related cards
-- Media-session / lock-screen controls so narration keeps playing with the screen off
-- Growing the content library beyond 30 cards

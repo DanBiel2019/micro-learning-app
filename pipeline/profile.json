@@ -1,0 +1,48 @@
+{
+  "listener": "A senior network engineer who also owns observability and resilience. Thinks in systems, cares about measuring the right thing, and wants to get out of the day-to-day rut by seeing how old lessons shape current problems.",
+  "lovedBooks": [
+    "Crucial Conversations",
+    "Crucial Accountability",
+    "The Phoenix Project",
+    "The 7 Habits of Highly Effective People",
+    "A More Beautiful Question",
+    "John C. Maxwell's leadership books"
+  ],
+  "coreTopics": [
+    "Systems & Measurement",
+    "Technology & AI",
+    "Leadership",
+    "Business & Entrepreneurship",
+    "Creativity"
+  ],
+  "adjacentFields": [
+    "engineering disasters and near misses",
+    "aviation and space safety",
+    "medicine and public health history",
+    "military history and logistics",
+    "statistics and the history of measurement",
+    "cognitive psychology and decision making",
+    "behavioral economics",
+    "ecology and complex adaptive systems",
+    "urban planning and infrastructure",
+    "sports analytics",
+    "design and human factors",
+    "history of computing and the internet",
+    "manufacturing and operations (Toyota, lean)",
+    "negotiation and persuasion",
+    "economics of incentives"
+  ],
+  "styles": "Story-driven case studies first: what happened, the mistake people made, what they learned and how. Counterintuitive or surprising findings are a plus. Depth: intermediate to advanced; start high level, leave hooks to drill down.",
+  "format": "Two-host conversational podcast for a morning coffee listen. About ten minutes per episode, five segments of roughly two minutes each.",
+  "mix": {
+    "core": 2,
+    "adjacent": 2,
+    "fresh": 1
+  },
+  "voices": {
+    "host": "af_heart",
+    "cohost": "am_michael",
+    "hostName": "Maya",
+    "cohostName": "Theo"
+  }
+}

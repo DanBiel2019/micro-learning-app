@@ -1,20 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Micro Learning</string>
-    <string name="play">Play</string>
-    <string name="pause">Pause</string>
-    <string name="previous">Previous idea</string>
-    <string name="next">Next idea</string>
-    <string name="like">Keep these coming</string>
-    <string name="not_for_me">Not for me</string>
-    <string name="go_deeper">Go deeper</string>
-    <string name="liked">Noted, more like this.</string>
-    <string name="skipped">Got it, fewer like this.</string>
-    <string name="challenge_label">TRY THIS</string>
-    <string name="deeper_title">Go deeper on “%1$s”</string>
-    <string name="deeper_added">Queued next: %1$s</string>
-    <string name="deeper_empty">Nothing related left in the library yet.</string>
-    <string name="progress">%1$d of %2$d · ~%3$d min today</string>
-    <string name="voice_unavailable">Text-to-speech isn’t available on this device. You can still read along.</string>
-    <string name="source_line">%1$s · %2$s</string>
 </resources>

@@ -15,3 +15,7 @@
 
 # Published builds
 !release/*.apk
+
+# Pipeline working output
+/pipeline/out/
+__pycache__/
