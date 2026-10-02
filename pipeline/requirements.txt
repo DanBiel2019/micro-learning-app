@@ -1,0 +1,5 @@
+anthropic>=1.11
+pydantic>=2.13
+kokoro-onnx>=0.6
+soundfile>=0.13
+numpy>=2.0
