@@ -1,8 +1,13 @@
 """Runs an open-weights model locally with llama.cpp's llama-server and asks it for JSON.
 
-Default model: Qwen3-14B (Apache-2.0), quantised to Q4_K_M, which fits comfortably in a
-GitHub Actions runner's 16 GB and needs no GPU or API key. Output is constrained to a JSON
-schema by llama.cpp's grammar sampler, so every response parses.
+Default model: Gemma 4 26B-A4B (Apache-2.0), a mixture-of-experts model with 25B weights but
+only ~4B active per token, quantised to ~4 bits (unsloth UD-IQ4_XS, 13.6 GB). It fits a GitHub
+Actions runner's 16 GB, needs no GPU or API key, and on the runner's 4 CPUs it is several times
+faster than a dense 14B model while writing better and staying as faithful to its sources.
+Output is constrained to a JSON schema by llama.cpp's grammar sampler, so every response parses.
+
+Sampling defaults and template quirks are chosen per model family from the file name
+(see PROFILES), so LLM_MODEL can still point at a Qwen3 GGUF.
 """
 from __future__ import annotations
 
@@ -14,8 +19,29 @@ import time
 import urllib.request
 from pathlib import Path
 
-DEFAULT_MODEL = Path(os.environ.get("LLM_MODEL", Path.home() / "models" / "Qwen3-14B-Q4_K_M.gguf"))
+DEFAULT_MODEL = Path(os.environ.get("LLM_MODEL", Path.home() / "models" / "gemma-4-26B-A4B-it-UD-IQ4_XS.gguf"))
 DEFAULT_SERVER = os.environ.get("LLAMA_SERVER", "llama-server")
+
+# Per-family settings, from each model card's recommended (non-thinking) sampling.
+PROFILES = {
+    # https://huggingface.co/google/gemma-4-26B-A4B-it recommends temperature 1.0, top_p 0.95,
+    # top_k 64. We write a little cooler (0.8) because sticking to the source's facts matters
+    # more here than variety; judging calls (fact-check, ranking) pass their own low value.
+    # Thinking is off unless the system prompt starts with <|think|>; with
+    # enable_thinking=false the chat template pre-fills an empty thought channel, so the
+    # grammar-constrained answer starts straight away. No presence penalty: it would
+    # also punish the JSON keys every line repeats.
+    "gemma": {"sampling": {"temperature": 0.8, "top_p": 0.95, "top_k": 64, "min_p": 0.0},
+              "no_think_suffix": ""},
+    # https://huggingface.co/Qwen/Qwen3-14B: non-thinking temperature 0.7, top_p 0.8, top_k 20.
+    "qwen": {"sampling": {"temperature": 0.7, "top_p": 0.8, "top_k": 20, "min_p": 0.0, "presence_penalty": 1.0},
+             "no_think_suffix": "\n/no_think"},
+}
+
+
+def profile_for(model: Path) -> dict:
+    name = Path(model).name.lower()
+    return PROFILES["gemma"] if "gemma" in name else PROFILES["qwen"]
 
 
 def _free_port() -> int:
@@ -61,6 +87,7 @@ class LocalLLM:
         self.proc = subprocess.Popen(args, stdout=self.log, stderr=subprocess.STDOUT)
         self._wait_ready()
         self.model_name = Path(model).stem
+        self.profile = profile_for(model)
 
     def _wait_ready(self, timeout: int = 600):
         start = time.time()
@@ -76,20 +103,23 @@ class LocalLLM:
             time.sleep(2)
         raise TimeoutError("llama-server did not become ready")
 
-    def json(self, system: str, user: str, schema: dict, max_tokens: int = 3000, temperature: float = 0.7) -> dict:
+    def json(self, system: str, user: str, schema: dict, max_tokens: int = 3000,
+             temperature: float | None = None) -> dict:
+        """temperature=None uses the model card's recommendation; pass a low value for judging tasks."""
+        sampling = dict(self.profile["sampling"])
+        if temperature is not None:
+            sampling["temperature"] = temperature
         body = {
             "messages": [
                 {"role": "system", "content": system},
-                # Qwen3 reasons before answering unless told not to; the grammar needs pure JSON.
-                {"role": "user", "content": user + "\n/no_think"},
+                # Thinking is switched off: the grammar needs the answer to be pure JSON
+                # (Qwen3 also wants the /no_think soft switch in the user turn).
+                {"role": "user", "content": user + self.profile["no_think_suffix"]},
             ],
             "response_format": {"type": "json_schema", "json_schema": {"name": "output", "schema": inline_refs(schema)}},
             "chat_template_kwargs": {"enable_thinking": False},
             "max_tokens": max_tokens,
-            "temperature": temperature,
-            "top_p": 0.8,
-            "top_k": 20,
-            "presence_penalty": 1.0,
+            **sampling,
             # DRY discourages verbatim repetition; JSON punctuation breaks sequences so structure is unaffected.
             "dry_multiplier": 0.8,
             "dry_base": 1.75,
@@ -106,11 +136,15 @@ class LocalLLM:
         if choice.get("finish_reason") == "length":
             raise RuntimeError("Model hit max_tokens before finishing the JSON")
         usage = data.get("usage", {})
-        print(f"    llm: {usage.get('prompt_tokens')} in / {usage.get('completion_tokens')} out in {time.time() - t0:.0f}s", flush=True)
+        timings = data.get("timings", {})
+        speed = (f" (prompt {timings['prompt_per_second']:.1f} tok/s, generation {timings['predicted_per_second']:.1f} tok/s)"
+                 if timings.get("prompt_per_second") and timings.get("predicted_per_second") else "")
+        print(f"    llm: {usage.get('prompt_tokens')} in / {usage.get('completion_tokens')} out in {time.time() - t0:.0f}s{speed}", flush=True)
         content = choice["message"]["content"].strip()
-        # Belt and braces in case a template leaves an empty think block in front.
-        if content.startswith("<think>"):
-            content = content.split("</think>", 1)[-1].strip()
+        # Belt and braces in case a template leaves an empty thinking block in front.
+        for opener, closer in (("<think>", "</think>"), ("<|channel>", "<channel|>")):
+            if content.startswith(opener):
+                content = content.split(closer, 1)[-1].strip()
         return json.loads(content)
 
     def close(self):
