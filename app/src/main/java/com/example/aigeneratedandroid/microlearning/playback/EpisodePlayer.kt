@@ -145,6 +145,12 @@ class EpisodePlayer(
         c.seekTo((c.currentPosition + deltaMs).coerceIn(0, c.duration.coerceAtLeast(0)))
     }
 
+    /** Sets an exact speed (one of [SPEEDS]); used by the Now Playing speed picker. */
+    fun setSpeed(speed: Float) {
+        controller?.playbackParameters = PlaybackParameters(speed)
+        _state.update { it.copy(speed = speed) }
+    }
+
     fun seekTo(positionMs: Long) {
         if (episode?.hasAudio == true) controller?.seekTo(positionMs)
     }
@@ -174,6 +180,7 @@ class EpisodePlayer(
                     .setAlbumTitle(ep.title)
                     .setTrackNumber(index + 1)
                     .setTotalTrackCount(ep.segments.size)
+                    .apply { Artwork.forSegment(ep, index)?.let { setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER) } }
                     .build()
             )
             .build()
