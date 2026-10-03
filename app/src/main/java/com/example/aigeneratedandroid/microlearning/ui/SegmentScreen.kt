@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -52,7 +53,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.example.aigeneratedandroid.microlearning.data.Reaction
@@ -96,19 +105,27 @@ fun SegmentScreen(
         }
     }
 
+    StatusBarIcons(overDarkContent = false)
     Column(Modifier.fillMaxSize()) {
         Row(
             Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
-            Text(
-                episode.title,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-                maxLines = 1
-            )
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back to episode") }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Idea ${pager.currentPage + 1} of ${episode.segments.size}",
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1
+                )
+                Text(
+                    episode.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
             PageDots(episode, pager.currentPage)
             Spacer(Modifier.width(16.dp))
         }
@@ -133,14 +150,18 @@ fun SegmentScreen(
 
 @Composable
 private fun PageDots(episode: Episode, current: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.clearAndSetSemantics { },
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         episode.segments.forEachIndexed { i, s ->
             val pal = palette(s.topic)
             Box(
                 Modifier
                     .size(width = if (i == current) 18.dp else 6.dp, height = 6.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(if (i == current) pal.accent else MaterialTheme.colorScheme.outline)
+                    .background(if (i == current) pal.accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
             )
         }
     }
@@ -162,6 +183,7 @@ private fun SegmentPage(
 ) {
     val pal = palette(segment.topic)
     val context = LocalContext.current
+    val haptics = LocalHapticFeedback.current
     fun open(url: String) = runCatching {
         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
@@ -181,19 +203,27 @@ private fun SegmentPage(
                 Text("NEW TERRITORY", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.weight(1f))
-            Text("${index + 1} of ${episode.segments.size}", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            segment.durationMs?.let {
+                Text(formatDuration(it), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         Spacer(Modifier.height(14.dp))
         if (segment.kicker.isNotBlank()) {
             Text(segment.kicker, style = MaterialTheme.typography.titleMedium.copy(fontFamily = Display, fontStyle = FontStyle.Italic), color = pal.accent)
             Spacer(Modifier.height(4.dp))
         }
-        Text(segment.title, style = MaterialTheme.typography.headlineMedium)
+        Text(segment.title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
         Spacer(Modifier.height(14.dp))
 
         if (!(isCurrent && player.isPlaying)) {
-            Surface(onClick = onPlay, shape = RoundedCornerShape(50), color = pal.accent, contentColor = MaterialTheme.colorScheme.surface) {
-                Row(Modifier.padding(horizontal = 16.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                onClick = { haptics.performHapticFeedback(HapticFeedbackType.LongPress); onPlay() },
+                shape = RoundedCornerShape(50),
+                color = pal.accent,
+                contentColor = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
+                Row(Modifier.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Headphones, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
@@ -203,10 +233,18 @@ private fun SegmentPage(
                 }
             }
         } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Equalizer(pal.accent)
-                Spacer(Modifier.width(10.dp))
-                Text("Now playing", style = MaterialTheme.typography.labelLarge, color = pal.accent)
+            Surface(
+                onClick = { haptics.performHapticFeedback(HapticFeedbackType.LongPress); onPlay() },
+                shape = RoundedCornerShape(50),
+                color = pal.soft,
+                contentColor = pal.accent,
+                modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Now playing. Pause" }
+            ) {
+                Row(Modifier.padding(horizontal = 18.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Equalizer(pal.accent)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Now playing · Pause", style = MaterialTheme.typography.labelLarge)
+                }
             }
         }
         Spacer(Modifier.height(20.dp))
@@ -275,8 +313,14 @@ private fun SegmentPage(
 
         Spacer(Modifier.height(20.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ReactionButton(Icons.Rounded.ThumbUp, "More like this", reaction > 0, pal) { onReact(Reaction.LIKED) }
-            ReactionButton(Icons.Rounded.ThumbDown, "Less like this", reaction < 0, pal) { onReact(Reaction.SKIPPED) }
+            ReactionButton(Icons.Rounded.ThumbUp, "More like this", reaction > 0, pal) {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onReact(Reaction.LIKED)
+            }
+            ReactionButton(Icons.Rounded.ThumbDown, "Less like this", reaction < 0, pal) {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                onReact(Reaction.SKIPPED)
+            }
         }
         Spacer(Modifier.height(32.dp))
     }
@@ -299,7 +343,10 @@ private fun Transcript(
     SectionTitle(
         "Transcript",
         trailing = {
-            Icon(if (expanded || following) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, null)
+            Icon(
+                if (expanded || following) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
+                if (expanded || following) "Collapse transcript" else "Expand transcript"
+            )
         },
         onClick = { expanded = !expanded }
     )
@@ -335,7 +382,11 @@ private fun Transcript(
             "Show all ${lines.size} lines",
             style = MaterialTheme.typography.labelLarge,
             color = pal.accent,
-            modifier = Modifier.clickable { expanded = true }.padding(10.dp)
+            modifier = Modifier
+                .heightIn(min = 48.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { expanded = true }
+                .padding(horizontal = 10.dp, vertical = 14.dp)
         )
     }
 }
@@ -359,10 +410,11 @@ private fun SectionTitle(text: String, trailing: (@Composable () -> Unit)? = nul
         Modifier
             .fillMaxWidth()
             .padding(top = 28.dp, bottom = 8.dp)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            .heightIn(min = 48.dp)
+            .then(if (onClick != null) Modifier.clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick) else Modifier),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+        Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).semantics { heading() })
         trailing?.invoke()
     }
 }
@@ -387,7 +439,7 @@ private fun LinkRow(title: String, subtitle: String, onClick: (() -> Unit)?) {
         }
         if (onClick != null) {
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.AutoMirrored.Rounded.OpenInNew, "Open", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.AutoMirrored.Rounded.OpenInNew, "Opens in browser", Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -405,9 +457,10 @@ private fun ReactionButton(
         shape = RoundedCornerShape(50),
         color = if (selected) pal.accent else Color.Transparent,
         contentColor = if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface,
-        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        border = if (selected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
+        modifier = Modifier.heightIn(min = 48.dp).semantics { this.selected = selected }
     ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
             Text(label, style = MaterialTheme.typography.labelLarge)

@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import com.example.aigeneratedandroid.microlearning.ui.theme.LocalReducedMotion
 import com.example.aigeneratedandroid.microlearning.ui.theme.topicPalette
 import kotlin.math.PI
 import kotlin.math.cos
@@ -34,7 +35,7 @@ fun CoverArt(seed: String, topics: List<String>, modifier: Modifier = Modifier, 
         topics.ifEmpty { listOf("") }.map { topicPalette(it, dark = true).accent }.distinct()
     }
     val shapes = remember(seed) { CoverShapes.from(seed) }
-    val drift by if (animate) {
+    val drift by if (animate && !LocalReducedMotion.current) {
         rememberInfiniteTransition(label = "cover").animateFloat(
             0f, 1f, infiniteRepeatable(tween(24_000, easing = LinearEasing), RepeatMode.Reverse), label = "drift"
         )

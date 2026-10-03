@@ -1,12 +1,6 @@
 package com.example.aigeneratedandroid.microlearning.ui
 
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,50 +8,64 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.example.aigeneratedandroid.microlearning.data.ListeningStats
 import com.example.aigeneratedandroid.microlearning.model.Episode
-import com.example.aigeneratedandroid.microlearning.model.PreviousEpisode
 import com.example.aigeneratedandroid.microlearning.model.Segment
 import com.example.aigeneratedandroid.microlearning.playback.PlayerState
+import com.example.aigeneratedandroid.microlearning.ui.theme.Spacing
 import com.example.aigeneratedandroid.microlearning.ui.theme.palette
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
+private val HERO_HEIGHT = 400.dp
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     ui: UiState,
@@ -65,133 +73,181 @@ fun HomeScreen(
     contentPadding: PaddingValues,
     onPlayEpisode: () -> Unit,
     onOpenSegment: (Int) -> Unit,
-    onOpenPrevious: (PreviousEpisode) -> Unit,
-    onOpenLibrary: () -> Unit,
+    onRefresh: () -> Unit,
+    onBackToToday: () -> Unit,
     onDismissNotice: () -> Unit,
     completedKey: (Episode, Segment) -> String
 ) {
-    val episode = ui.episode ?: return
+    val episode = ui.episode
+    if (episode == null) {
+        StatusBarIcons(overDarkContent = false)
+        HomeSkeleton(contentPadding)
+        return
+    }
     val thisPlaying = player.episodeId == episode.id
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = contentPadding) {
-        item { Hero(episode, playing = thisPlaying && player.isPlaying, started = thisPlaying, onPlay = onPlayEpisode) }
+    val list = rememberLazyListState()
+    val heroPx = with(LocalDensity.current) { HERO_HEIGHT.toPx() }
+    // Light status-bar icons while the dark hero is behind them, theme icons once scrolled past.
+    val overHero by remember { derivedStateOf { list.firstVisibleItemIndex == 0 && list.firstVisibleItemScrollOffset < heroPx * 0.85f } }
+    StatusBarIcons(overDarkContent = overHero)
 
-        if (ui.refreshing) {
-            item { LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp), color = MaterialTheme.colorScheme.primary) }
-        }
-        ui.notice?.let { notice ->
-            item { Notice(notice, onDismissNotice) }
-        }
+    val done = episode.segments.map { completedKey(episode, it) in ui.completed }
 
-        item {
-            SectionHeader("In this episode", "${episode.segments.size} ideas")
-        }
-        itemsIndexed(episode.segments, key = { _, s -> s.id }) { i, seg ->
-            SegmentRow(
-                index = i,
-                segment = seg,
-                current = thisPlaying && player.segmentIndex == i,
-                playing = thisPlaying && player.segmentIndex == i && player.isPlaying,
-                progress = if (thisPlaying && player.segmentIndex == i && player.durationMs > 0) player.positionMs.toFloat() / player.durationMs else 0f,
-                done = completedKey(episode, seg) in ui.completed,
-                onClick = { onOpenSegment(i) }
+    val pullState = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = ui.refreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+        state = pullState,
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = pullState,
+                isRefreshing = ui.refreshing,
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding()
             )
         }
-
-        if (ui.history.isNotEmpty()) {
-            item { SectionHeader("Earlier episodes", "Catch up anytime") }
-            item {
-                LazyRow(contentPadding = PaddingValues(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    items(ui.history, key = { it.id }) { prev -> PreviousCard(prev) { onOpenPrevious(prev) } }
-                }
+    ) {
+        LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = contentPadding) {
+            item(key = "hero") {
+                Hero(
+                    episode = episode,
+                    done = done,
+                    playing = thisPlaying && player.isPlaying,
+                    started = thisPlaying,
+                    currentIndex = if (thisPlaying) player.segmentIndex else -1,
+                    onPlay = onPlayEpisode
+                )
             }
-        }
 
-        item {
-            Row(
-                Modifier
-                    .padding(20.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .clickable(onClick = onOpenLibrary)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp))
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.AutoMirrored.Rounded.MenuBook, null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text("Your classics library", style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        "30 ideas from the books you love, available offline",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+            if (ui.todayId != null && ui.todayId != episode.id) {
+                item(key = "earlier") {
+                    NoticeBanner(
+                        "You're listening to ${if (episode.offline) "a set from your classics library" else "the episode from ${formatShortDate(episode.date)}"}.",
+                        icon = Icons.Rounded.History,
+                        actionLabel = "Back to today",
+                        onAction = onBackToToday,
+                        modifier = Modifier.padding(start = Spacing.m, end = Spacing.m, top = Spacing.m)
                     )
                 }
             }
-        }
-        item {
-            Text(
-                "A new studio episode arrives every morning. Every segment cites its sources.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-            )
-            Spacer(Modifier.height(24.dp))
+            ui.notice?.let { notice ->
+                item(key = "notice") {
+                    NoticeBanner(
+                        notice.text,
+                        actionLabel = if (notice.canRetry) "Try again" else null,
+                        onAction = if (notice.canRetry) onRefresh else null,
+                        onDismiss = onDismissNotice,
+                        modifier = Modifier.padding(start = Spacing.m, end = Spacing.m, top = Spacing.m)
+                    )
+                }
+            }
+            if (ui.stats.ideasHeard > 0) {
+                item(key = "stats") { StatsStrip(ui.stats) }
+            }
+
+            item(key = "header") {
+                SectionHeader("In this episode", subtitle = "${episode.segments.size} ideas · ${episodeMinutes(episode)} min")
+            }
+            itemsIndexed(episode.segments, key = { _, s -> s.id }) { i, seg ->
+                val current = thisPlaying && player.segmentIndex == i
+                SegmentRow(
+                    index = i,
+                    count = episode.segments.size,
+                    segment = seg,
+                    current = current,
+                    playing = current && player.isPlaying,
+                    progress = if (current && player.durationMs > 0) player.positionMs.toFloat() / player.durationMs else 0f,
+                    done = done[i],
+                    onClick = { onOpenSegment(i) }
+                )
+            }
+
+            item(key = "footer") {
+                Text(
+                    "A new studio episode arrives every morning. Every idea cites its sources.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = Spacing.xl, vertical = Spacing.xl)
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun Hero(episode: Episode, playing: Boolean, started: Boolean, onPlay: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(440.dp)) {
-        CoverArt(episode.id, episode.segments.map { it.topic }, Modifier.fillMaxSize())
+private fun Hero(
+    episode: Episode,
+    done: List<Boolean>,
+    playing: Boolean,
+    started: Boolean,
+    currentIndex: Int,
+    onPlay: () -> Unit
+) {
+    Box(Modifier.fillMaxWidth().heightIn(min = HERO_HEIGHT)) {
+        CoverArt(episode.id, episode.segments.map { it.topic }, Modifier.matchParentSize())
+        // Bottom scrim for legible text, top scrim so status-bar icons stay readable over any art.
         Box(
             Modifier
-                .fillMaxSize()
-                .background(Brush.verticalGradient(0.35f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.78f)))
+                .matchParentSize()
+                .background(Brush.verticalGradient(0.3f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.82f)))
+        )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(96.dp)
+                .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.35f), Color.Transparent)))
         )
         Column(
             Modifier
                 .align(Alignment.BottomStart)
-                .padding(24.dp)
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(start = Spacing.xl, end = Spacing.xl, bottom = Spacing.xl, top = 120.dp)
         ) {
             Text(
-                formatDate(episode.date).uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.8f)
+                "${greeting()} · ${formatDate(episode.date)}".uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.85f)
             )
-            Spacer(Modifier.height(8.dp))
-            Text(episode.title, style = MaterialTheme.typography.displaySmall, color = Color.White)
-            Spacer(Modifier.height(6.dp))
-            Text(episode.theme, style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.85f))
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(Spacing.xs))
+            Text(
+                episode.title,
+                style = MaterialTheme.typography.displaySmall,
+                color = Color.White,
+                modifier = Modifier.semantics { heading() }
+            )
+            if (episode.theme.isNotBlank()) {
+                Spacer(Modifier.height(Spacing.xs))
+                Text(episode.theme, style = MaterialTheme.typography.bodyLarge, color = Color.White.copy(alpha = 0.88f))
+            }
+            Spacer(Modifier.height(Spacing.m))
+            IdeaProgress(episode, done, currentIndex)
+            Spacer(Modifier.height(Spacing.l))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
+                Button(
                     onClick = onPlay,
-                    shape = RoundedCornerShape(50),
-                    color = Color.White,
-                    contentColor = Color(0xFF15120F)
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Color(0xFF15120F)),
+                    contentPadding = PaddingValues(start = Spacing.m, end = Spacing.l, top = Spacing.s, bottom = Spacing.s),
+                    modifier = Modifier.heightIn(min = 52.dp)
                 ) {
-                    Row(Modifier.padding(horizontal = 22.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            when {
-                                playing -> "Pause"
-                                started -> "Resume"
-                                else -> "Play episode"
-                            },
-                            style = MaterialTheme.typography.labelLarge
-                        )
-                    }
-                }
-                Spacer(Modifier.width(16.dp))
-                Column {
-                    Text(episodeLength(episode), style = MaterialTheme.typography.labelLarge, color = Color.White)
+                    Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, null)
+                    Spacer(Modifier.width(Spacing.xs))
                     Text(
-                        if (episode.offline) "Device voice" else "with ${episode.hostName("host")} & ${episode.hostName("cohost")}",
+                        when {
+                            playing -> "Pause"
+                            started -> "Resume"
+                            else -> "Play episode"
+                        },
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                }
+                Spacer(Modifier.width(Spacing.m))
+                Column {
+                    Text("${episodeMinutes(episode)} min · ${episode.segments.size} ideas", style = MaterialTheme.typography.labelLarge, color = Color.White)
+                    Text(
+                        if (episode.offline) "Read by your phone's voice" else "with ${episode.hostName("host")} & ${episode.hostName("cohost")}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.75f)
+                        color = Color.White.copy(alpha = 0.8f)
                     )
                 }
             }
@@ -199,36 +255,73 @@ private fun Hero(episode: Episode, playing: Boolean, started: Boolean, onPlay: (
     }
 }
 
+/** One pill per idea, in its topic colour: solid when heard, outlined while playing. */
 @Composable
-private fun Notice(text: String, onDismiss: () -> Unit) {
+private fun IdeaProgress(episode: Episode, done: List<Boolean>, currentIndex: Int) {
+    val heard = done.count { it }
     Row(
         Modifier
-            .padding(start = 20.dp, end = 12.dp, top = 16.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(start = 14.dp),
+            .clearAndSetSemantics { contentDescription = "$heard of ${episode.segments.size} ideas heard" },
+        horizontalArrangement = Arrangement.spacedBy(Spacing.xxs),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f).padding(vertical = 10.dp))
-        IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, "Dismiss", Modifier.size(18.dp)) }
+        episode.segments.forEachIndexed { i, seg ->
+            val accent = com.example.aigeneratedandroid.microlearning.ui.theme.topicPalette(seg.topic, dark = true).accent
+            Box(
+                Modifier
+                    .weight(1f)
+                    .height(if (i == currentIndex) 6.dp else 4.dp)
+                    .clip(CircleShape)
+                    .background(
+                        when {
+                            done.getOrElse(i) { false } -> accent
+                            i == currentIndex -> accent.copy(alpha = 0.7f)
+                            else -> Color.White.copy(alpha = 0.25f)
+                        }
+                    )
+            )
+        }
     }
 }
 
 @Composable
-private fun SectionHeader(title: String, subtitle: String) {
-    Row(
-        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 10.dp),
-        verticalAlignment = Alignment.Bottom
+private fun StatsStrip(stats: ListeningStats) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(start = Spacing.m, end = Spacing.m, top = Spacing.m),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer
     ) {
-        Text(title, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-        Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(
+            Modifier.padding(horizontal = Spacing.m, vertical = Spacing.s).semantics(mergeDescendants = true) { },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(if (stats.heardToday) "🔥" else "☕", style = MaterialTheme.typography.titleLarge, modifier = Modifier.clearAndSetSemantics { })
+            Spacer(Modifier.width(Spacing.s))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    when {
+                        stats.streakDays > 1 -> "${stats.streakDays}-day streak"
+                        stats.heardToday -> "You listened today"
+                        stats.streakDays == 1 -> "Keep yesterday's streak going"
+                        else -> "Ready when you are"
+                    },
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    "${stats.ideasHeard} ideas heard · ${stats.minutesHeard} min listened",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun SegmentRow(
     index: Int,
+    count: Int,
     segment: Segment,
     current: Boolean,
     playing: Boolean,
@@ -237,36 +330,39 @@ private fun SegmentRow(
     onClick: () -> Unit
 ) {
     val pal = palette(segment.topic)
+    val status = when {
+        playing -> "Playing now. "
+        current -> "Paused. "
+        done -> "Listened. "
+        else -> ""
+    }
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClickLabel = "Open idea", onClick = onClick)
             .background(if (current) pal.soft else Color.Transparent)
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = Spacing.gutter, vertical = Spacing.s)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Idea ${index + 1} of $count: ${segment.title}. ${segment.topic}." +
+                    (segment.durationMs?.let { " ${spokenDuration(it)}." } ?: "") + " $status"
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(pal.soft),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(segment.visual?.items?.firstOrNull { it.emphasis }?.emoji ?: segment.visual?.items?.firstOrNull()?.emoji ?: "💡", fontSize = 26.sp)
-        }
-        Spacer(Modifier.width(14.dp))
+        SegmentGlyph(segment, pal.soft, size = 56.dp, corner = 16.dp)
+        Spacer(Modifier.width(Spacing.m))
         Column(Modifier.weight(1f)) {
             Text(
                 (segment.kicker.ifBlank { segment.topic }).uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = pal.accent,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Spacer(Modifier.height(2.dp))
             Text(segment.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(2.dp))
             Text(
-                listOfNotNull(segment.durationMs?.let(::formatDuration), segment.topic, segment.source.author)
+                listOfNotNull(segment.durationMs?.let(::formatDuration), segment.topic, segment.source.author.ifBlank { null })
                     .joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -274,68 +370,57 @@ private fun SegmentRow(
                 overflow = TextOverflow.Ellipsis
             )
             if (current && progress > 0f) {
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(Spacing.xs))
                 LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(50)),
+                    progress = { progress.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(CircleShape),
                     color = pal.accent,
-                    trackColor = pal.soft
+                    trackColor = pal.soft,
+                    drawStopIndicator = {}
                 )
             }
         }
-        Spacer(Modifier.width(12.dp))
-        when {
-            playing -> Equalizer(pal.accent)
-            done -> Box(
-                Modifier.size(26.dp).clip(CircleShape).background(pal.accent),
-                contentAlignment = Alignment.Center
-            ) { Icon(Icons.Rounded.Check, "Listened", tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(16.dp)) }
-            else -> Text("${index + 1}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.outline)
+        Spacer(Modifier.width(Spacing.s))
+        Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+            when {
+                playing -> Equalizer(pal.accent)
+                done -> Box(
+                    Modifier.size(24.dp).clip(CircleShape).background(pal.accent),
+                    contentAlignment = Alignment.Center
+                ) { Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.surface, modifier = Modifier.size(16.dp)) }
+                else -> Text("${index + 1}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
 
+/** Skeleton of the Today screen while the first episode loads (NN/g: skeletons for full-page loads). */
 @Composable
-fun Equalizer(color: Color, modifier: Modifier = Modifier) {
-    val t = rememberInfiniteTransition(label = "eq")
-    Row(modifier.height(18.dp), horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.Bottom) {
-        listOf(420, 300, 520).forEach { period ->
-            val h by t.animateFloat(0.25f, 1f, infiniteRepeatable(tween(period), RepeatMode.Reverse), label = "bar")
-            Box(Modifier.width(4.dp).fillMaxHeightFraction(h).clip(RoundedCornerShape(2.dp)).background(color))
-        }
-    }
-}
-
-private fun Modifier.fillMaxHeightFraction(f: Float) = this.then(Modifier.height((18 * f).dp))
-
-@Composable
-private fun PreviousCard(prev: PreviousEpisode, onClick: () -> Unit) {
+private fun HomeSkeleton(contentPadding: PaddingValues) {
     Column(
         Modifier
-            .width(168.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick)
+            .fillMaxSize()
+            .padding(contentPadding)
+            .semantics { contentDescription = "Loading today's episode" }
     ) {
-        Box(Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(18.dp))) {
-            CoverArt(prev.id, listOf(prev.title), Modifier.fillMaxSize(), animate = false)
+        Spacer(Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+        SkeletonBlock(
+            Modifier.padding(Spacing.m).fillMaxWidth().height(HERO_HEIGHT - 60.dp),
+            RoundedCornerShape(28.dp)
+        )
+        SkeletonBlock(Modifier.padding(start = Spacing.gutter, top = Spacing.l).width(180.dp).height(24.dp))
+        repeat(4) {
+            Row(Modifier.padding(horizontal = Spacing.gutter, vertical = Spacing.s), verticalAlignment = Alignment.CenterVertically) {
+                SkeletonBlock(Modifier.size(56.dp), RoundedCornerShape(16.dp))
+                Spacer(Modifier.width(Spacing.m))
+                Column(Modifier.weight(1f)) {
+                    SkeletonBlock(Modifier.width(90.dp).height(10.dp))
+                    Spacer(Modifier.height(Spacing.xs))
+                    SkeletonBlock(Modifier.fillMaxWidth(0.85f).height(16.dp))
+                    Spacer(Modifier.height(Spacing.xs))
+                    SkeletonBlock(Modifier.fillMaxWidth(0.5f).height(10.dp))
+                }
+            }
         }
-        Spacer(Modifier.height(8.dp))
-        Text(formatDate(prev.date), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(prev.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
-}
-
-fun formatDate(iso: String): String = runCatching {
-    LocalDate.parse(iso).format(DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault()))
-}.getOrDefault(iso)
-
-fun formatDuration(ms: Long): String {
-    val s = ms / 1000
-    return "%d:%02d".format(s / 60, s % 60)
-}
-
-private fun episodeLength(ep: Episode): String {
-    val ms = ep.totalDurationMs.takeIf { it > 0 } ?: (ep.segments.size * 100_000L)
-    val min = ((ms + 30_000) / 60_000).coerceAtLeast(1)
-    return "$min min · ${ep.segments.size} ideas"
 }
