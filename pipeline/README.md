@@ -2,7 +2,7 @@
 
 Every morning a GitHub Actions job ([`daily-episode.yml`](../.github/workflows/daily-episode.yml))
 writes, voices and publishes a new ~10 minute, two-host episode. The app downloads it from
-`releases/latest/download/feed.json`.
+`releases/download/daily-feed/feed.json` (a rolling release; each episode also gets a dated `ep-YYYY-MM-DD` archive release).
 
 **No API keys and no running cost.** Everything runs on the free GitHub runner with
 open-weights models:

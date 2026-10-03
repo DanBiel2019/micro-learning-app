@@ -1,7 +1,8 @@
 name: Daily episode
 
 # Writes, voices and publishes one micro-learning episode per day as a GitHub Release.
-# The app reads releases/latest/download/feed.json.
+# Publishes a dated ep-YYYY-MM-DD release and refreshes the rolling daily-feed release;
+# the app reads releases/download/daily-feed/feed.json.
 #
 # Everything runs on the GitHub runner with open-weights models, so no API keys are needed:
 #   - Qwen3-14B (Apache-2.0) via llama.cpp writes the scripts, grounded in Wikipedia and news articles

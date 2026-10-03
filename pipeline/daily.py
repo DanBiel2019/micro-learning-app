@@ -23,15 +23,16 @@ KEEP_PREVIOUS = 30
 
 
 def fetch_ledger(repo: str) -> list[dict]:
-    """The ledger rides along with each release, so the newest release always has full history."""
-    url = f"https://github.com/{repo}/releases/latest/download/ledger.json"
-    try:
-        with urllib.request.urlopen(url, timeout=30) as r:
-            return json.load(r)
-    except urllib.error.HTTPError as e:
-        if e.code == 404:
-            return []
-        raise
+    """The ledger lives on the rolling daily-feed release (older setups kept it on "latest")."""
+    for url in (f"https://github.com/{repo}/releases/download/daily-feed/ledger.json",
+                f"https://github.com/{repo}/releases/latest/download/ledger.json"):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+    return []
 
 
 def covered_items(ledger: list[dict]) -> list[str]:

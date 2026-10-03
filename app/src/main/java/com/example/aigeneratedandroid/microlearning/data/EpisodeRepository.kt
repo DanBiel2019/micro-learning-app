@@ -107,6 +107,7 @@ class EpisodeRepository(private val context: Context) {
             encodeDefaults = true
         }
 
-        val LATEST_FEED_URL = "https://github.com/${BuildConfig.FEED_REPO}/releases/latest/download/feed.json"
+        /** Rolling release refreshed by the daily-episode workflow (see pipeline/publish.py). */
+        val LATEST_FEED_URL = "https://github.com/${BuildConfig.FEED_REPO}/releases/download/daily-feed/feed.json"
     }
 }
