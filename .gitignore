@@ -19,3 +19,6 @@
 # Pipeline working output
 /pipeline/out/
 __pycache__/
+
+# Agent worktrees
+/.claude/worktrees/
