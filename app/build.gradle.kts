@@ -12,8 +12,8 @@ android {
         applicationId = "com.example.aigeneratedandroid"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "2.0"
+        versionCode = 4
+        versionName = "3.0"
 
         // Where the daily episode feed is published (GitHub Releases of this repo).
         buildConfigField("String", "FEED_REPO", "\"DanBiel2019/micro-learning-app\"")
