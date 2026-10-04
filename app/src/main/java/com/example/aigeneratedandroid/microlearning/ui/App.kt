@@ -44,6 +44,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.aigeneratedandroid.microlearning.ui.infographic.InfographicGalleryScreen
 
 @Composable
 fun App(vm: MainViewModel = viewModel()) {
@@ -230,8 +231,12 @@ private fun AppNavHost(
                     onSpeed = vm.player::setSpeed,
                     // Extension point: add entries here (e.g. an infographic gallery) and
                     // register their routes in this graph.
-                    entries = emptyList()
+                    entries = emptyList(),
+                    onOpenInfographicGallery = { nav.navigate(Routes.INFOGRAPHIC_GALLERY) }
                 )
+            }
+            composable(Routes.INFOGRAPHIC_GALLERY) {
+                InfographicGalleryScreen(contentPadding = contentPadding, onBack = { nav.popBackStack() })
             }
         }
 

@@ -21,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Verified
@@ -61,7 +62,9 @@ fun YouScreen(
     appVersion: String,
     contentPadding: PaddingValues,
     onSpeed: (Float) -> Unit,
-    entries: List<YouEntry>
+    entries: List<YouEntry>,
+    /** Opens the infographic review gallery; listed last under About, out of the way. */
+    onOpenInfographicGallery: (() -> Unit)? = null
 ) {
     StatusBarIcons(overDarkContent = false)
     val context = LocalContext.current
@@ -138,6 +141,14 @@ fun YouScreen(
             onClick = { open("https://github.com/$feedRepo/releases") }
         )
         SettingRow(icon = Icons.Rounded.Info, title = "Version", subtitle = appVersion)
+        if (onOpenInfographicGallery != null) {
+            SettingRow(
+                icon = Icons.Rounded.Dashboard,
+                title = "Infographic gallery",
+                subtitle = "Every visual style with sample data, for design review",
+                onClick = onOpenInfographicGallery
+            )
+        }
         Spacer(Modifier.height(Spacing.xxl))
     }
 }
