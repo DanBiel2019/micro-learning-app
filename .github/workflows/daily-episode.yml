@@ -125,7 +125,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${{ inputs.publish == false }}" = "true" ]; then
+          # Scheduled runs have no inputs, and null == false is true in Actions expressions.
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.publish == false }}" = "true" ]; then
             echo "Dry run: not publishing."
           elif [ -f out/feed.json ]; then
             python publish.py --repo "${{ github.repository }}"
