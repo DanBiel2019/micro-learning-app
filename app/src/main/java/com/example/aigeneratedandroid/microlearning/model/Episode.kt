@@ -58,13 +58,31 @@ data class Source(
     val format: String = "book"
 )
 
+/**
+ * An infographic spec (see [VisualKinds]). [title] is the headline that states the idea and
+ * [caption] the one-line punchline. [xAxis] / [yAxis] name the dimensions of a "matrix", the
+ * direction of a "ladder" (yAxis) or the scale of a "spectrum" (xAxis); blank elsewhere.
+ */
 @Serializable
 data class Visual(
     val kind: String,
     val title: String,
     val items: List<VisualItem>,
-    val caption: String = ""
+    val caption: String = "",
+    val xAxis: String = "",
+    val yAxis: String = ""
 )
+
+/** Every visual kind the app draws. Mirrors VisualKind in pipeline/schema.py. */
+object VisualKinds {
+    /** Kinds published since the first feeds; they must keep rendering. */
+    val ORIGINAL = listOf("flow", "cycle", "compare", "stats", "bars", "venn", "ladder", "timeline", "quote")
+
+    /** Kinds added with the infographic redesign. */
+    val ADDED = listOf("before_after", "matrix", "iceberg", "funnel", "spectrum", "waffle", "big_number")
+
+    val ALL: List<String> = ORIGINAL + ADDED
+}
 
 @Serializable
 data class VisualItem(

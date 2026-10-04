@@ -31,6 +31,8 @@ object Routes {
     const val LIBRARY = "library"
     const val YOU = "you"
     const val PLAYER = "player"
+    /** Review screen for every infographic kind (You > About > Infographic gallery). */
+    const val INFOGRAPHIC_GALLERY = "infographic_gallery"
 
     fun segment(index: Int) = "segment/$index"
 }

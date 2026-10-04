@@ -60,7 +60,7 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
+   "kind": "spectrum",
    "title": "Three responses to shock",
    "items": [
     {
@@ -88,7 +88,8 @@
      "emphasis": true
     }
    ],
-   "caption": "Ask what gets better because of the hit."
+   "caption": "Ask what gets better because of the hit.",
+   "xAxis": "What stress does to it"
   }
  },
  {
@@ -146,7 +147,8 @@
      "emphasis": true
     }
    ],
-   "caption": "Change the goal and everything downstream follows."
+   "caption": "Change the goal and everything downstream follows.",
+   "yAxis": "Leverage"
   }
  },
  {
@@ -268,24 +270,40 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
-   "title": "Two questions after an incident",
+   "kind": "iceberg",
+   "title": "Human error is only the tip",
    "items": [
     {
-     "label": "Who did it?",
-     "detail": "Finds a person to blame",
-     "emoji": "👉",
+     "label": "Human error",
+     "detail": "The slip everyone sees",
+     "emoji": "👤",
      "value": null,
      "valueLabel": null,
      "emphasis": false
     },
     {
-     "label": "Why did it make sense?",
-     "detail": "Finds the system to fix",
-     "emoji": "🔍",
+     "label": "It made sense",
+     "detail": "Why did they decide that, then?",
+     "emoji": "🧠",
+     "value": null,
+     "valueLabel": null,
+     "emphasis": false
+    },
+    {
+     "label": "A trap was set",
+     "detail": "The system made the mistake easy",
+     "emoji": "🪤",
      "value": null,
      "valueLabel": null,
      "emphasis": true
+    },
+    {
+     "label": "Warnings were hidden",
+     "detail": "Signs nobody could see in time",
+     "emoji": "🙈",
+     "value": null,
+     "valueLabel": null,
+     "emphasis": false
     }
    ],
    "caption": "Human error is a symptom, not a cause."
@@ -310,28 +328,28 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
-   "title": "The four types of work",
+   "kind": "iceberg",
+   "title": "Most work sits below the waterline",
    "items": [
     {
-     "label": "Planned",
-     "detail": "Business projects",
+     "label": "Planned projects",
+     "detail": "The work on the roadmap",
      "emoji": "📅",
      "value": null,
      "valueLabel": null,
      "emphasis": false
     },
     {
-     "label": "Unplanned",
-     "detail": "Firefighting and rework",
+     "label": "Unplanned firefighting",
+     "detail": "Behind most outages",
      "emoji": "🔥",
      "value": null,
      "valueLabel": null,
      "emphasis": true
     },
     {
-     "label": "Internal",
-     "detail": "Infrastructure changes",
+     "label": "Internal changes",
+     "detail": "Infrastructure work nobody sees",
      "emoji": "🔧",
      "value": null,
      "valueLabel": null,
@@ -339,7 +357,7 @@
     },
     {
      "label": "Business as usual",
-     "detail": "Routine operations",
+     "detail": "Routine that eats the week",
      "emoji": "🔄",
      "value": null,
      "valueLabel": null,
@@ -368,20 +386,12 @@
    "format": "book"
   },
   "visual": {
-   "kind": "stats",
+   "kind": "big_number",
    "title": "An error budget at 99.9%",
    "items": [
     {
-     "label": "Reliability target",
-     "detail": "Agreed service level",
-     "emoji": "🎯",
-     "value": null,
-     "valueLabel": "99.9%",
-     "emphasis": false
-    },
-    {
-     "label": "Budget per 30 days",
-     "detail": "Allowed downtime",
+     "label": "Downtime allowed",
+     "detail": "Every 30 days, at a 99.9% target",
      "emoji": "⏱️",
      "value": null,
      "valueLabel": "43 min",
@@ -426,8 +436,8 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
-   "title": "Batch size and blast radius",
+   "kind": "before_after",
+   "title": "Shrink the batch, shrink the blast",
    "items": [
     {
      "label": "One big release",
@@ -726,12 +736,12 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
-   "title": "Where value goes",
+   "kind": "spectrum",
+   "title": "Where the value goes",
    "items": [
     {
      "label": "Crowded market",
-     "detail": "Margins competed away",
+     "detail": "Margins competed away to nothing",
      "emoji": "🥊",
      "value": null,
      "valueLabel": null,
@@ -739,14 +749,15 @@
     },
     {
      "label": "Owned niche",
-     "detail": "You set the terms",
+     "detail": "Too small to fight over; you set the terms",
      "emoji": "👑",
      "value": null,
      "valueLabel": null,
      "emphasis": true
     }
    ],
-   "caption": "Make competition irrelevant."
+   "caption": "Make competition irrelevant.",
+   "xAxis": "Pricing power"
   }
  },
  {
@@ -768,7 +779,7 @@
    "format": "book"
   },
   "visual": {
-   "kind": "timeline",
+   "kind": "flow",
    "title": "How disruption sneaks up",
    "items": [
     {
@@ -776,23 +787,23 @@
      "detail": "Polished and profitable",
      "emoji": "🏛️",
      "value": null,
-     "valueLabel": "Year 1",
+     "valueLabel": null,
      "emphasis": false
     },
     {
      "label": "Cheap entrant appears",
-     "detail": "'Not good enough'",
+     "detail": "Dismissed as 'not good enough'",
      "emoji": "🐣",
      "value": null,
-     "valueLabel": "Year 2",
-     "emphasis": false
+     "valueLabel": null,
+     "emphasis": true
     },
     {
      "label": "Entrant keeps improving",
      "detail": "Below the radar",
      "emoji": "📈",
      "value": null,
-     "valueLabel": "Year 4",
+     "valueLabel": null,
      "emphasis": false
     },
     {
@@ -800,8 +811,8 @@
      "detail": "Too late to respond",
      "emoji": "💥",
      "value": null,
-     "valueLabel": "Year 6",
-     "emphasis": true
+     "valueLabel": null,
+     "emphasis": false
     }
    ],
    "caption": "Disruption looks like a product not worth your attention."
@@ -910,35 +921,45 @@
    "format": "book"
   },
   "visual": {
-   "kind": "venn",
-   "title": "Escaping the fool's choice",
+   "kind": "matrix",
+   "title": "Escape the fool's choice",
    "items": [
     {
-     "label": "Honesty",
-     "detail": "Say the hard thing",
-     "emoji": "🗣️",
-     "value": null,
-     "valueLabel": null,
-     "emphasis": false
-    },
-    {
-     "label": "Relationship",
-     "detail": "Keep the respect",
-     "emoji": "🤝",
+     "label": "Soften the truth",
+     "detail": "Keep the peace, lose the point",
+     "emoji": "🍬",
      "value": null,
      "valueLabel": null,
      "emphasis": false
     },
     {
      "label": "Both, with safety",
-     "detail": "The skilled path",
+     "detail": "Say the hard thing, show respect",
      "emoji": "🛡️",
      "value": null,
      "valueLabel": null,
      "emphasis": true
+    },
+    {
+     "label": "Say nothing",
+     "detail": "Neither truth nor trust",
+     "emoji": "🤐",
+     "value": null,
+     "valueLabel": null,
+     "emphasis": false
+    },
+    {
+     "label": "Blunt hit",
+     "detail": "True, but it costs the relationship",
+     "emoji": "💥",
+     "value": null,
+     "valueLabel": null,
+     "emphasis": false
     }
    ],
-   "caption": "Don't soften the truth. Add safety around it."
+   "caption": "Don't soften the truth. Add safety around it.",
+   "xAxis": "Honesty",
+   "yAxis": "Respect"
   }
  },
  {
@@ -960,8 +981,8 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
-   "title": "Choosing what to raise",
+   "kind": "before_after",
+   "title": "Raise one gap, not every complaint",
    "items": [
     {
      "label": "Every complaint",
@@ -1053,11 +1074,11 @@
   },
   "visual": {
    "kind": "ladder",
-   "title": "The law of the lid",
+   "title": "Leadership is the lid",
    "items": [
     {
      "label": "Talent",
-     "detail": "Capped by leadership",
+     "detail": "Rises only as high as the lid",
      "emoji": "🧠",
      "value": null,
      "valueLabel": null,
@@ -1065,30 +1086,31 @@
     },
     {
      "label": "Budget",
-     "detail": "Capped by leadership",
+     "detail": "Same money, lower ceiling",
      "emoji": "💰",
      "value": null,
      "valueLabel": null,
      "emphasis": false
     },
     {
-     "label": "Tools",
-     "detail": "Capped by leadership",
-     "emoji": "🛠️",
+     "label": "Opportunity",
+     "detail": "Seen and taken only if led well",
+     "emoji": "🚪",
      "value": null,
      "valueLabel": null,
      "emphasis": false
     },
     {
      "label": "Leadership",
-     "detail": "The lid on everything",
+     "detail": "The lid on everything below",
      "emoji": "🧢",
      "value": null,
      "valueLabel": null,
      "emphasis": true
     }
    ],
-   "caption": "Raise the lid and everything else rises."
+   "caption": "Raise the lid and everything else rises.",
+   "yAxis": "Ceiling"
   }
  },
  {
@@ -1376,7 +1398,7 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
+   "kind": "spectrum",
    "title": "Where creativity survives",
    "items": [
     {
@@ -1389,7 +1411,7 @@
     },
     {
      "label": "In orbit",
-     "detail": "Connected but free",
+     "detail": "Connected, but free to think",
      "emoji": "🛰️",
      "value": null,
      "valueLabel": null,
@@ -1404,7 +1426,8 @@
      "emphasis": false
     }
    ],
-   "caption": "Stay close enough to matter, far enough to think."
+   "caption": "Stay close enough to matter, far enough to think.",
+   "xAxis": "Distance from the rules"
   }
  },
  {
@@ -1476,12 +1499,12 @@
    "format": "book"
   },
   "visual": {
-   "kind": "compare",
-   "title": "Two ways to start",
+   "kind": "before_after",
+   "title": "Start with a thread, not a fire",
    "items": [
     {
      "label": "Find your passion",
-     "detail": "Leads to paralysis",
+     "detail": "Waiting for it leads to paralysis",
      "emoji": "🔥",
      "value": null,
      "valueLabel": null,
@@ -1489,7 +1512,7 @@
     },
     {
      "label": "Follow a curiosity",
-     "detail": "Leads to movement",
+     "detail": "Small threads lead to movement",
      "emoji": "🧵",
      "value": null,
      "valueLabel": null,

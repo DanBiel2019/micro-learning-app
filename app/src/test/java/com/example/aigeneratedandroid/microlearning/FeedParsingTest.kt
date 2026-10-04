@@ -1,6 +1,7 @@
 package com.example.aigeneratedandroid.microlearning
 
 import com.example.aigeneratedandroid.microlearning.model.Episode
+import com.example.aigeneratedandroid.microlearning.model.VisualKinds
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -9,7 +10,7 @@ import java.io.File
 /** The app must read exactly what the pipeline publishes. */
 class FeedParsingTest {
 
-    private val visualKinds = setOf("flow", "cycle", "compare", "stats", "bars", "venn", "ladder", "timeline", "quote")
+    private val visualKinds = VisualKinds.ALL.toSet()
 
     @Test
     fun `published feed parses with audio, timings and visuals`() {
