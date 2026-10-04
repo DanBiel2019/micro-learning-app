@@ -295,14 +295,25 @@ def fact_check(llm: LocalLLM, draft: DraftSegment, doc: research.Document) -> Dr
 
 
 def dedupe(lines: list[DraftLine]) -> list[DraftLine]:
-    """Drops lines that repeat (or nearly repeat) an earlier one."""
+    """Drops lines that repeat (or nearly repeat) an earlier one, and the "Exactly." /
+    "Indeed." echo chains small models fall into at a segment's end: a reply of three words
+    or fewer is kept only if it's new and doesn't follow another one."""
     import difflib
 
+    def norm(text: str) -> str:
+        return re.sub(r"\W+", " ", text.lower()).strip()
+
     kept: list[DraftLine] = []
+    short_seen: set[str] = set()
     for line in lines:
-        norm = re.sub(r"\W+", " ", line.text.lower()).strip()
-        if len(norm.split()) >= 6 and any(difflib.SequenceMatcher(None, norm, re.sub(r"\W+", " ", k.text.lower()).strip()).ratio() > 0.85 for k in kept):
+        n = norm(line.text)
+        words = len(n.split())
+        if words >= 6 and any(difflib.SequenceMatcher(None, n, norm(k.text)).ratio() > 0.85 for k in kept):
             continue
+        if words <= 3:
+            if n in short_seen or (kept and len(norm(kept[-1].text).split()) <= 3):
+                continue
+            short_seen.add(n)
         kept.append(line)
     return kept
 
