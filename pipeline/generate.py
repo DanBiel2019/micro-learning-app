@@ -33,9 +33,19 @@ Quality bar:
 
 Script format (field `script`): a natural conversation between two hosts, {host_name} (speaker "host") and {cohost_name} (speaker "cohost"). Around 280-330 spoken words per segment (about two minutes). Short spoken sentences, contractions, genuine back-and-forth (questions, pushback, "wait, really?"), no stage directions, no sound effects, no markdown, no emoji, spell out symbols. Numbers as you'd say them. Segment 1 opens with a one-line welcome and the theme; the last segment ends with a short sign-off. Other segments end with a natural hand-off.
 
-Visual (field `visual`): one infographic that makes the core idea click at a glance. Choose the kind that fits:
-flow (3-5 sequential steps), cycle (3-5 steps in a loop), compare (2-3 side-by-side options), stats (2-4 big numbers), bars (3-6 comparable quantities; set value), venn (2-3 overlapping ideas; last item is the overlap), ladder (3-5 levels, weakest first), timeline (3-6 dated events; put the year in valueLabel), quote (one item, the quote in label, the speaker in detail).
-Labels at most 4 words, details at most 12 words, one relevant emoji per item, mark the punchline item with emphasis=true. value/valueLabel are null when not used.
+Visual (field `visual`): one infographic that makes the core idea click in two seconds on a phone, the kind of explainer people save or share. `title` is a headline that states the idea ("Most outages start with a change"), never a topic label. `caption` is the punchline in one short sentence. Choose the kind whose shape matches the idea:
+- before_after: exactly 2 items, the old way then the new way (a shift in practice or thinking); numbers optional.
+- iceberg: first item is what everyone sees, then 2-4 hidden causes or costs underneath; emphasise the biggest hidden one.
+- matrix: exactly 4 items for two dimensions, ordered top-left, top-right, bottom-left, bottom-right; top-right is high on both. Name the dimensions in xAxis (horizontal) and yAxis (vertical), e.g. xAxis "Urgent", yAxis "Important" with items Schedule, Do now, Drop, Delegate.
+- spectrum: 3-5 positions between two extremes, in order; xAxis names the scale; emphasise the sweet spot.
+- funnel: 3-5 stages that narrow, widest first; put counts in value when known (width follows the number).
+- ladder: 3-5 levels, weakest first; yAxis names what grows going up.
+- flow (3-5 steps in order), cycle (3-5 steps that loop), timeline (3-6 dated events; year in valueLabel), compare (2-3 options side by side; emphasise the one the story favours).
+- big_number: one striking, well-documented number (valueLabel) and what it counts (label), plus up to 2 context items.
+- stats (2-4 numbers in valueLabel), bars (3-5 quantities in one unit; set value and valueLabel), waffle (a share of a whole: 1-3 parts with value as a percent, 0-100).
+- venn (2-3 overlapping ideas; last item names the overlap), quote (one item: the quote in label, the speaker in detail).
+Prefer a shape over a list: "people blame X but Y causes it" is an iceberg, "we used to, now we" is before_after, "it depends on two things" is a matrix, "too little or too much" is a spectrum. Vary kinds across the episode.
+Labels at most 4 words, details at most 12 words, one relevant emoji per item, emphasis=true on exactly one punchline item. value/valueLabel are null when not used; xAxis/yAxis are "" unless the kind uses them.
 
 Other fields: kicker is a 2-4 word hook ("The wrong number"); summary is 2-3 tight sentences; keyPoints are 3 short bullets; takeaway is one memorable sentence; challenge is one small action for today; deeperQuestions are 3 questions worth exploring further; furtherReading is 1-3 real resources with URLs when you have them. Set adjacent=true for adjacent and fresh segments. Segment ids are "s1".."s{count}".
 """

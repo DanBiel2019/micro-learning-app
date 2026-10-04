@@ -20,7 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 import research
 from local_llm import LocalLLM
-from schema import Episode, Line, Reading, Segment, Source, Visual
+from schema import Episode, Line, Reading, Segment, Source, Visual, VisualKind
 
 HERE = Path(__file__).parent
 MIN_WORDS = 230
@@ -42,10 +42,12 @@ class DraftItem(_Strict):
 
 
 class DraftVisual(_Strict):
-    kind: Literal["flow", "cycle", "compare", "stats", "bars", "venn", "ladder", "timeline", "quote"]
-    title: str
-    items: list[DraftItem] = Field(min_length=2, max_length=6)
-    caption: str
+    kind: VisualKind
+    title: str = Field(description="Headline that states the idea, at most 8 words")
+    items: list[DraftItem] = Field(min_length=1, max_length=6)
+    caption: str = Field(description="The punchline, one short sentence")
+    xAxis: str = Field(description="matrix: horizontal dimension; spectrum: the scale; else empty")
+    yAxis: str = Field(description="matrix: vertical dimension; ladder: what grows going up; else empty")
 
 
 class DraftLine(_Strict):
@@ -108,9 +110,22 @@ Shape:
 
 Script: 16-22 lines, 300-360 spoken words in total. Natural conversation with genuine back-and-forth. Short spoken sentences, contractions. Use at least four concrete facts from the SOURCE (names, places, years, numbers, what was said or decided). Every line must add something new: never repeat or paraphrase an earlier line, and never read the takeaway or challenge out word for word. No greetings, no sign-off, no wrap-up lines like "and that's the story", no mention of "this episode" or other segments. No markdown, emoji, stage directions or sound effects. Spell out symbols and say numbers the way people say them.
 
-Visual: one infographic that makes the core idea click. Pick the kind that fits:
-flow (3-5 sequential steps), cycle (3-5 steps in a loop), compare (2-3 side-by-side options), stats (2-4 big numbers; put the number in valueLabel), bars (3-5 comparable quantities; set value and valueLabel), venn (2-3 overlapping ideas, the LAST item is the overlap), ladder (3-5 levels, weakest first), timeline (3-6 dated events; year in valueLabel), quote (one item: quote in label, speaker in detail).
-Labels at most 4 words, details at most 12 words, one fitting emoji per item, emphasis=true on the single punchline item. value and valueLabel are null when unused. Only numbers that appear in the SOURCE.
+Visual: one infographic that makes the core idea click in two seconds on a phone. title is a headline that states the idea ("Most outages start with a change"), never a topic label ("Outages"). caption is the punchline in one short sentence. Pick the ONE kind whose shape matches the idea:
+- before_after: exactly 2 items, the old way then the new way (a shift in practice or thinking).
+- iceberg: first item is what everyone sees, then 2-4 hidden causes or costs underneath.
+- matrix: exactly 4 items for two dimensions, in order top-left, top-right, bottom-left, bottom-right; top-right is high on both. Name the dimensions in xAxis (horizontal) and yAxis (vertical).
+- spectrum: 3-5 positions between two extremes, in order; xAxis names the scale; emphasise the sweet spot.
+- funnel: 3-5 stages that narrow, widest first; counts in value when the SOURCE gives them.
+- ladder: 3-5 levels, weakest first; yAxis names what grows going up.
+- flow: 3-5 steps in order, cause to effect. cycle: 3-5 steps that loop back to the start.
+- timeline: 3-6 dated events; the year in valueLabel. compare: 2-3 options side by side, emphasise the one the story favours.
+- big_number: one striking number (valueLabel) and what it counts (label), plus up to 2 context items.
+- stats: 2-4 numbers, each in valueLabel. bars: 3-5 quantities in one unit; set value and valueLabel. waffle: a share of a whole, 1-3 parts with value as a percent (0-100).
+- venn: 2-3 overlapping ideas, the LAST item names the overlap. quote: one item, a quote from the SOURCE in label, the speaker in detail.
+Prefer a shape over a list: "people blame X but Y causes it" is an iceberg; "we used to, now we" is before_after; "it depends on two things" is a matrix; "too little or too much" is a spectrum. Number kinds only with numbers stated in the SOURCE.
+Labels at most 4 words, details at most 12 words, one fitting emoji per item, emphasis=true on exactly one punchline item. value and valueLabel are null when unused; xAxis and yAxis are "" unless the kind uses them.
+Example: {{"kind": "before_after", "title": "Blame hides the cause", "items": [{{"label": "Who messed up?", "detail": "People hide their mistakes", "emoji": "👉", "value": null, "valueLabel": null, "emphasis": false}}, {{"label": "What let it happen?", "detail": "Near misses get reported early", "emoji": "🔍", "value": null, "valueLabel": null, "emphasis": true}}], "caption": "Ask what, not who.", "xAxis": "", "yAxis": ""}}
+Matrix example: xAxis "Urgent", yAxis "Important", items in order "Schedule" (important only), "Do now" (both; emphasis), "Drop" (neither), "Delegate" (urgent only).
 
 Other fields: title is a specific, intriguing headline about this story (never just the topic name); kicker is a 2-4 word hook; summary is 2-3 tight sentences; keyPoints are 3 short bullets; takeaway is one memorable sentence; challenge is one small action the listener can do today; deeperQuestions are 3 questions worth exploring further."""
 
@@ -379,7 +394,16 @@ def generate_episode(profile: dict, covered: list[str], today: date) -> tuple[Ep
 
 
 def _fix_value_labels(visual: dict) -> dict:
-    """Models sometimes put just the unit ("minutes") in valueLabel; show the number too."""
+    """Models sometimes put just the unit ("minutes") in valueLabel; show the number too.
+    Also keeps a single punchline (the renderer gives the accent to one item) and clears axis
+    names on kinds that don't draw them."""
+    flagged = [item for item in visual["items"] if item.get("emphasis")]
+    for item in flagged[1:]:
+        item["emphasis"] = False
+    if visual.get("kind") not in ("matrix", "spectrum"):
+        visual["xAxis"] = ""
+    if visual.get("kind") not in ("matrix", "ladder"):
+        visual["yAxis"] = ""
     for item in visual["items"]:
         label, value = item.get("valueLabel"), item.get("value")
         if value is not None and (not label or not re.search(r"\d", label)):

@@ -15,27 +15,45 @@ class _Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-VisualKind = Literal["flow", "cycle", "compare", "stats", "bars", "venn", "ladder", "timeline", "quote"]
+# Mirrors VisualKinds in the app (model/Episode.kt). The first nine have shipped since the first
+# feeds; the rest came with the infographic redesign. The app draws unknown kinds as a flow, and
+# a spec that doesn't fit its kind (e.g. a matrix without exactly 4 items) as the closest kind that does.
+VISUAL_KINDS_ORIGINAL = ("flow", "cycle", "compare", "stats", "bars", "venn", "ladder", "timeline", "quote")
+VISUAL_KINDS_ADDED = ("before_after", "matrix", "iceberg", "funnel", "spectrum", "waffle", "big_number")
+VISUAL_KINDS = VISUAL_KINDS_ORIGINAL + VISUAL_KINDS_ADDED
+VisualKind = Literal[
+    "flow", "cycle", "compare", "stats", "bars", "venn", "ladder", "timeline", "quote",
+    "before_after", "matrix", "iceberg", "funnel", "spectrum", "waffle", "big_number",
+]
 
 
 class VisualItem(_Strict):
     label: str
     detail: str
     emoji: str
-    # Used by "bars" (bar length) and "stats" (the big number). null elsewhere.
+    # Used by "bars" (bar length), "funnel" (stage width), "waffle" (percent of 100). null elsewhere.
     value: Optional[float]
-    # Display text for the value, e.g. "10%" or "1.8M mi". null elsewhere.
+    # Display text for the value, e.g. "10%" or "1.8M mi" ("stats", "big_number", "timeline" year,
+    # optional on "before_after"). null elsewhere.
     valueLabel: Optional[str]
     # Highlight this item (the punchline, the winner, the real cause).
     emphasis: bool
 
 
 class Visual(_Strict):
-    """An infographic the app draws natively. Keep labels short (<= 4 words)."""
+    """An infographic the app draws natively. Keep labels short (<= 4 words).
+
+    title is a headline that states the idea; caption is the one-line punchline.
+    """
     kind: VisualKind
     title: str
     items: list[VisualItem]
     caption: str
+    # "matrix": the horizontal and vertical dimensions (top-right = high on both).
+    # "spectrum": xAxis names the scale. "ladder": yAxis names what increases going up.
+    # Empty for every other kind; defaults keep older feeds valid.
+    xAxis: str = ""
+    yAxis: str = ""
 
 
 class Source(_Strict):
