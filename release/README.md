@@ -4,12 +4,13 @@ Prebuilt APKs you can sideload onto an Android phone.
 
 | Version | File | Size | Notes |
 |---------|------|------|-------|
+| 3.0 (debug) | [micro-learning-v3.0-debug.apk](micro-learning-v3.0-debug.apk) | 22 MB | Today / Library / You tabs, full-screen Now Playing, 16 infographic kinds with an in-app gallery, new icon; episodes written by Gemma 4 |
 | 2.0 (debug) | [micro-learning-v2.0-debug.apk](micro-learning-v2.0-debug.apk) | 21 MB | Daily two-host studio episodes, infographics, transcript, background playback, redesigned UI |
 | 1.1 (debug) | [micro-learning-v1.1-debug.apk](micro-learning-v1.1-debug.apk) | 4.1 MB | First feed release: curation, device-voice narration, feedback loop, swipeable cards |
 
-**Direct download (latest):** [micro-learning-v2.0-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v2.0-debug.apk)
+**Direct download (latest):** [micro-learning-v3.0-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v3.0-debug.apk)
 
-SHA-256 (2.0): `154940510d067b59c3e0ce5bbb3c28859bda0c39650d646b7bef68c30610ed22`
+SHA-256 (3.0): `6a78d03d9d3cfd7195714e57c10ee46c2fae06adca7f6a7cf6d2351ed2b918bf`
 
 ## Installing
 
@@ -19,7 +20,7 @@ SHA-256 (2.0): `154940510d067b59c3e0ce5bbb3c28859bda0c39650d646b7bef68c30610ed22
 3. Open **Micro Learning**. Allow notifications when asked, so playback controls show on
    the lock screen.
 
-2.0 installs over 1.1 directly. Requires Android 7.0 (API 24) or newer. Today's episode
+3.0 installs over 2.0 and 1.1 directly. Requires Android 7.0 (API 24) or newer. Today's episode
 streams on first open and is downloaded for offline listening in the background.
 
 ## Notes
