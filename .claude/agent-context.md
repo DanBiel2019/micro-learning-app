@@ -15,8 +15,9 @@ Key paths
              research.py, render_audio.py (Kokoro TTS), daily.py, publish.py, sources.json
 - .github/workflows/daily-episode.yml   daily job on the GitHub runner
 
-Machine limits (IMPORTANT): this is an old 4-core laptop with 5 GB RAM.
-- Never start the Android emulator. Never run two Gradle builds at once.
+Machine: an old 4-core laptop with 5 GB RAM. The owner wants the best result regardless,
+so don't hold back because of it: use the Android emulator (AVD "ml34") to check your work
+on a device and take screenshots. It is slow, so stop Gradle before booting it and give it time.
 - Build with: export JAVA_HOME=$HOME/tools/jdk17; ./gradlew --no-daemon -q compileDebugKotlin
   then ./gradlew --no-daemon -q testDebugUnitTest assembleDebug before you finish.
 - A worktree needs local.properties containing: sdk.dir=/home/groot/tools/android-sdk
