@@ -1,7 +1,7 @@
 # Daily episode pipeline
 
-Every morning a GitHub Actions job ([`daily-episode.yml`](../.github/workflows/daily-episode.yml))
-writes, voices and publishes a new ~10 minute, two-host episode. The app downloads it from
+Every night a GitHub Actions job ([`daily-episode.yml`](../.github/workflows/daily-episode.yml))
+writes, voices and publishes a new ~10 minute, two-host episode, ready by 7:00 AM US Central. The app downloads it from
 `releases/download/daily-feed/feed.json` (a rolling release; each episode also gets a dated `ep-YYYY-MM-DD` archive release).
 
 **No API keys and no running cost.** Everything runs on the free GitHub runner with
@@ -34,18 +34,27 @@ use only facts in that text. The source is cited in the app and linked under "Go
 - **The fresh segment** comes from the last three weeks of engineering news feeds
   (Cloudflare's blog, The Register, Ars Technica, InfoQ, …). The model ranks candidates,
   favouring postmortems, outages and research findings over product launches.
-- **ledger.json** travels with every release and records every source used, so nothing
-  repeats.
+- **ledger.json** lives on the rolling `daily-feed` release and records every episode and
+  source used, so nothing repeats. Each run downloads it from there, not from a local `out/`
+  folder; never publish a stale `out/` by hand, or the release ledger loses newer episodes.
 
 ## Running it
 
-Nothing to set up: the job runs daily at 08:00 UTC. To run it by hand, open
-**Actions → Daily episode → Run workflow**. Untick *publish* for a dry run; the episode
-script and audio are kept as a downloadable artifact either way.
+Nothing to set up. The job is scheduled for 02:17 UTC (9:17 PM CDT / 8:17 PM CST the evening
+before), with a backup run at 05:17 UTC. The early start matters: GitHub has started scheduled
+runs up to 5.5 hours late, and a run takes 1 to 3 hours on the free runner. Even then the
+episode is out by about 5:45 AM Central. The episode is dated by the UTC day, which is
+already the morning it is for. Each run first checks the ledger; if the day's episode is
+already published (say the backup fires after a successful first run), it stops in seconds.
+
+To run it by hand, open **Actions → Daily episode → Run workflow**. Untick *publish* for a
+dry run; the episode script and audio are kept as a downloadable artifact either way.
 
 Each run downloads the 13.6 GB writing model from Hugging Face (a few minutes; it is larger
 than the 10 GB Actions cache allows) and restores the voice model and llama.cpp from the cache.
-A run takes about an hour on the free runner.
+
+GitHub turns off scheduled workflows in a public repository after 60 days without commits.
+It emails a warning first; re-enable the workflow under **Actions**, or push any commit.
 
 ## Why this model
 

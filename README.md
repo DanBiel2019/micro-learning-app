@@ -12,23 +12,24 @@ settles into the same rut.
 
 ## Download
 
-Grab the latest APK from [`release/`](release/), or download it directly:
-[micro-learning-v2.0-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v2.0-debug.apk).
+Grab the latest APK (3.0) from [`release/`](release/), or download it directly:
+[micro-learning-v3.0-debug.apk](https://github.com/DanBiel2019/micro-learning-app/raw/main/release/micro-learning-v3.0-debug.apk).
 Install steps are in [release/README.md](release/README.md).
 
-Episodes themselves are published as [GitHub Releases](https://github.com/DanBiel2019/micro-learning-app/releases)
-(`ep-YYYY-MM-DD`), one per day.
+Episodes themselves are published as [GitHub Releases](https://github.com/DanBiel2019/micro-learning-app/releases):
+one dated `ep-YYYY-MM-DD` release per day, plus a rolling `daily-feed` release that always
+holds the newest `feed.json`. A new episode is out by 7:00 AM US Central each morning.
 
 ## How it fits together
 
 ```
- GitHub Actions, daily                          Android app
- ┌──────────────────────────────┐               ┌───────────────────────────────────────┐
- │ pipeline/                    │   Release     │ EpisodeRepository  fetch + cache feed │
- │  generate_local  Qwen3 writes│──feed.json──▶ │ PrefetchWorker     download overnight │
- │  render_audio  Kokoro voices │  seg-N.mp3    │ PlaybackService    Media3, lock screen│
- │  publish.py   GitHub Release │               │ Compose UI         infographics, etc. │
- └──────────────────────────────┘               └───────────────────────────────────────┘
+ GitHub Actions, nightly                          Android app
+ ┌────────────────────────────────┐               ┌───────────────────────────────────────┐
+ │ pipeline/                      │   Release     │ EpisodeRepository  fetch + cache feed │
+ │  generate_local  Gemma 4 writes│──feed.json──▶ │ PrefetchWorker     download on Wi-Fi  │
+ │  render_audio    Kokoro voices │  seg-N.mp3    │ PlaybackService    Media3, lock screen│
+ │  publish.py      GitHub Release│               │ Compose UI         infographics, etc. │
+ └────────────────────────────────┘               └───────────────────────────────────────┘
 ```
 
 See [`pipeline/README.md`](pipeline/README.md) for the content pipeline and its one-time
@@ -42,21 +43,27 @@ app/src/main/java/com/example/aigeneratedandroid/
   microlearning/
     model/       Episode/Segment/Visual (mirrors pipeline/schema.py), UserProfile
     data/        EpisodeRepository (GitHub Releases feed, offline cache), PrefetchWorker,
-                 FeedbackStore (likes, skips, completions)
-    playback/    PlaybackService (Media3 session), EpisodePlayer (studio audio or device TTS)
+                 FeedbackStore (likes, skips, completions), ListeningLog (private, on-device)
+    playback/    PlaybackService (Media3 session), EpisodePlayer (studio audio or device TTS),
+                 Artwork (lock-screen cover art)
     curation/    ContentCurationEngine: offline episodes from the bundled library
     narration/   NarrationFormatter + NarrationPlayer: device-voice fallback
-    ui/          Home (generated cover art, chapters, history), Segment pages
-                 (Infographic, transcript, go deeper), MiniPlayer, theme
+    ui/          App + Navigation (Today / Library / You tabs), HomeScreen (Today: generated
+                 cover art, chapters), SegmentScreen (infographic, transcript, go deeper),
+                 LibraryScreen, YouScreen, NowPlayingScreen (full-screen player), MiniPlayer,
+                 infographic/ (renderer for every visual kind, plus a review gallery), theme
 app/src/main/assets/library.json   30 classic ideas with infographic specs (offline fallback)
 ```
 
-- **Infographics** are drawn natively from a small spec (`flow`, `cycle`, `compare`,
-  `stats`, `bars`, `venn`, `ladder`, `timeline`, `quote`), so every new episode gets
-  illustrations without shipping artwork, and they adapt to dark mode.
-- **Playback** keeps going with the screen off, with lock-screen and headphone controls,
-  ±15/30 s skips, 0.85–1.5× speed, and swipe-to-skip between segments. The transcript
-  highlights the line being spoken and tapping a line jumps to it.
+- **Infographics** are drawn natively from a small spec in one of 16 kinds (`flow`, `cycle`,
+  `compare`, `stats`, `bars`, `venn`, `ladder`, `timeline`, `quote`, `before_after`,
+  `matrix`, `iceberg`, `funnel`, `spectrum`, `waffle`, `big_number`), so every new episode
+  gets illustrations without shipping artwork, and they adapt to dark mode. Unknown kinds
+  fall back to `flow`. You → About → Infographic gallery shows every kind.
+- **Playback** keeps going with the screen off, with lock-screen artwork and headphone
+  controls, 15 s back / 30 s forward skips, 0.85×, 1×, 1.25× or 1.5× speed, and
+  swipe-to-skip between segments. The transcript highlights the line being spoken and
+  tapping a line jumps to it.
 - **Offline**: the newest episode's audio is downloaded in the background on Wi-Fi. With no
   connection at all, the app builds a set from the bundled library and reads it with the
   phone's best available voice.

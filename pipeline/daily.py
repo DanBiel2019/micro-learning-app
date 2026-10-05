@@ -1,6 +1,7 @@
 """Builds one day's episode end to end: script -> audio -> feed.json + ledger.json.
 
-  python daily.py --repo OWNER/REPO                 # generate with Claude (needs ANTHROPIC_API_KEY)
+  python daily.py --repo OWNER/REPO                   # write with a local model (LLM_MODEL, llama-server)
+  python daily.py --repo OWNER/REPO --engine claude   # write with Claude (needs ANTHROPIC_API_KEY)
   python daily.py --repo OWNER/REPO --script ep.json  # voice a hand-written episode instead
 
 Outputs land in --out (default ./out): seg-N.mp3, feed.json, ledger.json. publish.py then

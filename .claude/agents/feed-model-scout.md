@@ -12,10 +12,13 @@ GitHub-hosted ubuntu-latest runner. Longer run times are acceptable.
 
 Constraints of the runner: 4 vCPUs (x86-64 with AVX2), 16 GB RAM, about 14 GB free disk
 (more can be freed by deleting preinstalled toolchains such as /usr/share/dotnet,
-/usr/local/lib/android, /opt/ghc), no GPU, 6 hour job limit. The whole job (model
-download from cache, writing ~11 LLM calls of ~3k tokens in / ~1.2k out, fact-checking,
-then ~10 min of TTS) must finish in under 5.5 hours. Current baseline: Qwen3-14B Q4_K_M
-via llama.cpp build b11335, about 2 h 20 min end to end.
+/usr/local/lib/android, /opt/ghc), no GPU, 6 hour job limit (the workflow sets 5 h). The
+whole job (model download from Hugging Face, writing ~11 LLM calls of ~3k tokens in / ~1.2k
+out, fact-checking, then ~10 min of TTS) must finish in under 4 hours: the episode is due by
+7:00 AM US Central (12:00 UTC in daylight time), the job is scheduled for 02:17 UTC, and
+GitHub has started scheduled runs up to 5.5 h late. Current baseline: Gemma 4 26B-A4B
+UD-IQ4_XS via llama.cpp build b11335, about 1 h end to end (Qwen3-14B Q4_K_M before it took
+about 2 h 20 min).
 
 1. Research (web search/fetch): Hugging Face (trending, model cards, GGUF availability from
    official orgs, unsloth or bartowski), Open LLM / LMArena / creative-writing and
